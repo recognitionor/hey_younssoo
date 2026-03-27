@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "46ac021dade7c0c5cb6b9d1e65e8fd80",
+    "entities": [
+      {
+        "tableName": "user_stats",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `totalPoints` INTEGER NOT NULL, `mathDailyCount` INTEGER NOT NULL, `vocabDailyCount` INTEGER NOT NULL, `weeklyTotalCount` INTEGER NOT NULL, `isDailyClaimed` INTEGER NOT NULL, `isWeeklyClaimed` INTEGER NOT NULL, `lastDate` TEXT NOT NULL, `lastWeek` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalPoints",
+            "columnName": "totalPoints",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mathDailyCount",
+            "columnName": "mathDailyCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vocabDailyCount",
+            "columnName": "vocabDailyCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weeklyTotalCount",
+            "columnName": "weeklyTotalCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isDailyClaimed",
+            "columnName": "isDailyClaimed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isWeeklyClaimed",
+            "columnName": "isWeeklyClaimed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastDate",
+            "columnName": "lastDate",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastWeek",
+            "columnName": "lastWeek",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '46ac021dade7c0c5cb6b9d1e65e8fd80')"
+    ]
+  }
+}

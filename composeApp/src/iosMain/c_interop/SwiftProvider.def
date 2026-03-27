@@ -1,0 +1,3 @@
+headers = /Users/jhlee/workspace/beumProject/iosApp/iosApp/Bridge/Bridge.h
+package = com.kal.bium.swiftinterop
+language = Objective-C

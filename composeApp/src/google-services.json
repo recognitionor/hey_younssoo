@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "971266105583",
+    "project_id": "heyyoungssoo",
+    "storage_bucket": "heyyoungssoo.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971266105583:android:f9c761cac260e6f13c3b1a",
+        "android_client_info": {
+          "package_name": "com.bium.youngssoo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNbHJmi0OmVRBIf6D0bmr5T8MtS9ZLcQQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

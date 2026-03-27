@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <string name="search_hint">Search...</string>
+    <string name="error_disk_full">Oops, it seems like your disk is full.</string>
+    <string name="error_unknown">Oops, something went wrong.</string>
+    <string name="empty_writing">Your writing is empty.</string>
+    <string name="error_request_timeout">The request timed out.</string>
+    <string name="error_no_internet">Couldn't reach server, please check your internet connection.</string>
+    <string name="error_too_many_requests">Your quota seems to be exceeded.</string>
+    <string name="error_serialization">Couldn't parse data.</string>
+    <string name="error_login_failed">Login failed. Please try again.</string>
+    <string name="error_board_failed">글쓰기 실패.</string>
+    <string name="error_comment_failed">댓글 쓰기 실패.</string>
+    <string name="error_request_fail">Request failed</string>
+    <string name="error_refresh_token">토큰 갱신 실패</string>
+
+    <!-- Home Screen -->
+    <string name="home_tab_home">학습</string>
+    <string name="home_tab_guild">미니게임</string>
+    <string name="home_tab_hero">마이페이지</string>
+    <string name="home_profile_level">Lv. 12 학자</string>
+    <string name="home_resource_streak">12일 연속</string>
+    <string name="home_resource_energy">85/100 에너지</string>
+    <string name="home_select_realm">영역 선택</string>
+    <string name="home_mode_math">수학 던전</string>
+    <string name="home_mode_math_desc">타임어택 연산</string>
+    <string name="home_mode_vocab">영단어 아레나</string>
+    <string name="home_mode_vocab_desc">빠른 템포의 5지선다 전투</string>
+
+    <!-- Math Screen -->
+    <string name="math_title">수학 던전</string>
+    <string name="math_subtitle">계산 몬스터 5 웨이브를 물리치세요</string>
+    <string name="math_btn_enter">던전 입장</string>
+    <string name="math_cleared">던전 클리어!</string>
+    <string name="math_total_gold">총 획득 골드: %1$d</string>
+    <string name="math_btn_again">다시 하기</string>
+    <string name="math_wave_format">웨이브 %1$d / %2$d</string>
+    <string name="math_pts_format">%1$d 점</string>
+    <string name="math_time_format">%1$s초</string>
+    <string name="math_btn_retreat">후퇴하기</string>
+    <string name="math_input_placeholder">___</string>
+
+    <!-- Vocab Screen -->
+    <string name="vocab_title">영단어 5지선다 퀴즈</string>
+    <string name="vocab_btn_start">게임 시작</string>
+    <string name="vocab_q_eng_to_kor">다음 영단어의 뜻은?</string>
+    <string name="vocab_q_kor_to_eng">다음 뜻에 맞는 영단어는?</string>
+    <string name="vocab_score_format">현재 점수: %1$d 점</string>
+    <string name="vocab_btn_stop">게임 종료</string>
+
+</resources>

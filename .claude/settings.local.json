@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew:*)",
+      "Bash(npm install:*)",
+      "Bash(firebase login:list:*)",
+      "Bash(firebase projects:list)",
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=\"\" node:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(GOOGLE_APPLICATION_CREDENTIALS=\"\" node upload_vocab.js:*)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "Bash(ls:*)",
+      "Bash(node upload_vocab_client.mjs:*)"
+    ]
+  }
+}
