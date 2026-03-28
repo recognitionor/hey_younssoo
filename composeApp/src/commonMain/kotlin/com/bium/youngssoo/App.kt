@@ -21,6 +21,7 @@ import com.bium.youngssoo.minigame.data.model.MiniGame
 import com.bium.youngssoo.minigame.presentation.GameInitData
 import com.bium.youngssoo.minigame.presentation.MiniGameListScreen
 import com.bium.youngssoo.minigame.presentation.MiniGameViewModel
+import com.bium.youngssoo.minigame.presentation.TestWebViewScreen
 import com.bium.youngssoo.minigame.presentation.WebViewGameScreen
 import kotlinx.coroutines.launch
 import com.bium.youngssoo.reward.presentation.RewardScreen
@@ -56,7 +57,9 @@ fun App() {
                 var learnScreen by remember { mutableStateOf(LearnScreen.HOME) }
                 var playingGame by remember { mutableStateOf<MiniGame?>(null) }
                 var gameInitData by remember { mutableStateOf<GameInitData?>(null) }
+                var showTestWebView by remember { mutableStateOf(false) }
                 val coroutineScope = rememberCoroutineScope()
+
 
                 // 미니게임 플레이 중일 때
                 if (playingGame != null) {
@@ -120,7 +123,8 @@ fun App() {
                                 MainTab.LEARN -> {
                                     LearnTabContent(
                                         currentScreen = learnScreen,
-                                        onScreenChange = { learnScreen = it }
+                                        onScreenChange = { learnScreen = it },
+                                        onTestWebView = { showTestWebView = true }
                                     )
                                 }
                                 MainTab.MINIGAME -> {
@@ -155,7 +159,8 @@ fun App() {
 @Composable
 fun LearnTabContent(
     currentScreen: LearnScreen,
-    onScreenChange: (LearnScreen) -> Unit
+    onScreenChange: (LearnScreen) -> Unit,
+    onTestWebView: () -> Unit = {}
 ) {
     when (currentScreen) {
         LearnScreen.HOME -> {
@@ -163,7 +168,8 @@ fun LearnTabContent(
                 onNavigateToMath = { onScreenChange(LearnScreen.MATH) },
                 onNavigateToVocab = { onScreenChange(LearnScreen.VOCAB) },
                 onNavigateToHanja = { onScreenChange(LearnScreen.HANJA) },
-                onNavigateToReward = { }  // 탭에서 처리
+                onNavigateToReward = { },  // 탭에서 처리
+                onTestWebView = onTestWebView
             )
         }
         LearnScreen.MATH -> {

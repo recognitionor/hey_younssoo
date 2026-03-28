@@ -4,6 +4,7 @@ import com.bium.youngssoo.minigame.data.local.MiniGameProgressDao
 import com.bium.youngssoo.minigame.data.local.MiniGameProgressEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.json.Json
+import com.bium.youngssoo.currentTimeMillis
 
 class MiniGameProgressRepository(
     private val dao: MiniGameProgressDao
@@ -55,7 +56,7 @@ class MiniGameProgressRepository(
 
     suspend fun recordPlay(gameId: String, duration: Long) {
         ensureProgressExists(gameId)
-        dao.incrementPlayCount(gameId, System.currentTimeMillis())
+        dao.incrementPlayCount(gameId, currentTimeMillis())
         dao.addPlayTime(gameId, duration)
     }
 
@@ -70,5 +71,3 @@ class MiniGameProgressRepository(
     }
 }
 
-// System.currentTimeMillis() expect/actual
-expect fun currentTimeMillis(): Long

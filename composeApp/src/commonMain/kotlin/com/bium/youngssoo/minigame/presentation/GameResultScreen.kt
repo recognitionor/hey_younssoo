@@ -28,8 +28,7 @@ fun GameResultScreen(
     score: Int,
     targetScore: Int,
     isCleared: Boolean,
-    onNextStage: () -> Unit,
-    onRetry: () -> Unit,
+    reason: String? = null,
     onExit: () -> Unit
 ) {
     // 애니메이션
@@ -121,6 +120,16 @@ fun GameResultScreen(
                 color = Color.Gray
             )
 
+            reason?.let {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = it,
+                    fontSize = 14.sp,
+                    color = Color.Gray.copy(alpha = 0.8f),
+                    textAlign = TextAlign.Center
+                )
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
 
             // 점수 카드
@@ -206,81 +215,22 @@ fun GameResultScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // 버튼들
-            if (isCleared) {
-                // 클리어 시: 다음 스테이지 버튼
-                Button(
-                    onClick = onNextStage,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF00D4FF)
-                    )
-                ) {
-                    Text(
-                        text = "다음 스테이지",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = onExit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "나가기",
-                        fontSize = 16.sp
-                    )
-                }
-            } else {
-                // 실패 시: 다시하기 버튼
-                Button(
-                    onClick = onRetry,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFF6B6B)
-                    )
-                ) {
-                    Text(
-                        text = "다시 도전",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = onExit,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color.White
-                    )
-                ) {
-                    Text(
-                        text = "나가기",
-                        fontSize = 16.sp
-                    )
-                }
+            Button(
+                onClick = onExit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isCleared) Color(0xFF00D4FF) else Color(0xFFFF6B6B)
+                )
+            ) {
+                Text(
+                    text = "나가기",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isCleared) Color.Black else Color.White
+                )
             }
         }
     }

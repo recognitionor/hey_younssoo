@@ -1,7 +1,9 @@
 package com.bium.youngssoo.core.data.local
 
+import androidx.room.ConstructedBy
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import androidx.room.RoomDatabaseConstructor
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
@@ -17,6 +19,7 @@ import com.bium.youngssoo.reward.data.local.UserStatsEntity
     version = 4
 )
 @TypeConverters(StringListTypeConverter::class, QuestionCategoryConverter::class)
+@ConstructedBy(AppDatabaseConstructor::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userStatsDao(): UserStatsDao
     abstract fun questionDao(): QuestionDao
@@ -92,3 +95,6 @@ abstract class AppDatabase : RoomDatabase() {
         }
     }
 }
+
+// Room 2.7.0+ KMP 지원을 위한 생성자 인터페이스
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase>

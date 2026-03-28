@@ -13,6 +13,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -30,7 +32,8 @@ fun HomeScreen(
     onNavigateToMath: () -> Unit,
     onNavigateToVocab: () -> Unit,
     onNavigateToHanja: () -> Unit,
-    onNavigateToReward: () -> Unit
+    onNavigateToReward: () -> Unit,
+    onTestWebView: () -> Unit = {}
 ) {
     val rewardRepository: RewardRepository = koinInject()
 
@@ -49,6 +52,7 @@ fun HomeScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -190,6 +194,8 @@ fun HomeScreen(
             gradientColors = listOf(Color(0xFF2D2530), Color(0xFF151018)),
             onClick = onNavigateToHanja
         )
+
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 

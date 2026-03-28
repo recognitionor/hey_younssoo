@@ -52,6 +52,6 @@ val sharedModules = module {
     viewModelOf(::MathGameViewModel)
     viewModelOf(::VocabGameViewModel)
     viewModelOf(::HanjaGameViewModel)
-    single { MiniGameViewModel(get(), get(), null) }
+    single { MiniGameViewModel(get(), get(), get()) }
     viewModelOf(::RewardViewModel)
 }

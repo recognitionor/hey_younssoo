@@ -52,21 +52,10 @@ fun WebViewGameScreen(
             score = resultData!!.score,
             targetScore = resultData!!.targetScore,
             isCleared = resultData!!.isCleared,
-            onNextStage = {
-                // 다음 스테이지로
-                currentStage++
-                onStageCleared()
-                showResult = false
-                resultData = null
-                gameScore = 0
-            },
-            onRetry = {
-                // 재시도
-                showResult = false
-                resultData = null
-                gameScore = 0
-            },
             onExit = {
+                if (resultData!!.isCleared) {
+                    onStageCleared()
+                }
                 onGameEnd(
                     GameResult(
                         gameId = game.id,

@@ -75,13 +75,10 @@ class QuestionRepository(
             println("[FirebaseVersionCheck] Comparison - Local: $localVersion, Remote: $remoteVersion, HasLocalData: $hasLocalData")
             println("[FirebaseVersionCheck] ===================================")
 
-            // forceRefresh가 아니고 로컬 데이터가 존재하며, 버전이 동일(또는 낮음)하면 스킵
-            if (!forceRefresh && hasLocalData) {
-                // remoteVersion이 0인 경우는 metadata 세팅 전이라 간주하고,
-                // 로컬 데이터가 있으면 스킵하여 불필요한 다운로드 방지
-                if (remoteVersion == 0 || remoteVersion <= localVersion) {
-                    return Result.success(0)
-                }
+            // forceRefresh가 아니고 로컬 데이터가 존재하며, 버전이 최신인 경우에만 스킵
+            // remoteVersion이 0인 경우는 metadata 미설정 → 항상 싱크 (버전 관리 전 초기 상태)
+            if (!forceRefresh && hasLocalData && remoteVersion > 0 && remoteVersion <= localVersion) {
+                return Result.success(0)
             }
 
             val collectionName = when (category) {
@@ -89,15 +86,22 @@ class QuestionRepository(
                 QuestionCategory.HANJA -> "hanja_questions"
             }
 
-            // Firestore REST API 호출
-            val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collectionName"
+            // Firestore REST API 호출 (페이지네이션으로 전체 데이터 수집)
+            val baseUrl = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/$collectionName"
+            val allDocuments = mutableListOf<kotlinx.serialization.json.JsonElement>()
+            var pageToken: String? = null
 
-            val response: String = httpClient.get(url).body()
-            val jsonResponse = json.parseToJsonElement(response).jsonObject
+            do {
+                val url = if (pageToken != null) "$baseUrl?pageToken=$pageToken" else baseUrl
+                val response: String = httpClient.get(url).body()
+                val jsonResponse = json.parseToJsonElement(response).jsonObject
+                jsonResponse["documents"]?.jsonArray?.let { allDocuments.addAll(it) }
+                pageToken = jsonResponse["nextPageToken"]?.jsonPrimitive?.content
+            } while (pageToken != null)
 
-            val documents = jsonResponse["documents"]?.jsonArray ?: return Result.success(0)
+            if (allDocuments.isEmpty()) return Result.success(0)
 
-            val questions = documents.mapNotNull { docElement ->
+            val questions = allDocuments.mapNotNull { docElement ->
                 try {
                     val doc = docElement.jsonObject
                     val fields = doc["fields"]?.jsonObject ?: return@mapNotNull null

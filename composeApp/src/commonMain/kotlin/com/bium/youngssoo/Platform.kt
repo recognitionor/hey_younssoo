@@ -12,3 +12,5 @@ expect fun getPlatformContext(): Any?
 
 @Composable
 expect fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit)
+
+expect fun currentTimeMillis(): Long

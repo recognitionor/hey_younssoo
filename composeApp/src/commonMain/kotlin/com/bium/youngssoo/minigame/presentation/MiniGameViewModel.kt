@@ -39,7 +39,7 @@ class MiniGameViewModel(
     val state: StateFlow<MiniGameListState> = _state.asStateFlow()
 
     private val json = Json { ignoreUnknownKeys = true }
-    private val projectId = "youngssoo-app"  // 실제 프로젝트 ID로 변경 필요
+    private val projectId = "heyyoungssoo"
 
     init {
         loadGames()
@@ -67,23 +67,22 @@ class MiniGameViewModel(
     private fun loadGames() {
         viewModelScope.launch {
             _state.value = _state.value.copy(isLoading = true)
+            println("[MiniGameViewModel] loadGames() called, httpClient=$httpClient")
+
+            if (httpClient == null) {
+                println("[MiniGameViewModel] httpClient is null, returning")
+                _state.value = _state.value.copy(isLoading = false)
+                return@launch
+            }
 
             try {
-                if (httpClient == null) {
-                    _state.value = _state.value.copy(
-                        isLoading = false,
-                        games = getDefaultGames()
-                    )
-                    return@launch
-                }
-
                 val url = "https://firestore.googleapis.com/v1/projects/$projectId/databases/(default)/documents/mini_games"
+                println("[MiniGameViewModel] Fetching from: $url")
                 val response: String = httpClient.get(url).body()
+                println("[MiniGameViewModel] Response: ${response.take(200)}")
                 val jsonResponse = json.parseToJsonElement(response).jsonObject
 
-                val documents = jsonResponse["documents"]?.jsonArray
-
-                val games = documents?.mapNotNull { docElement ->
+                val games = jsonResponse["documents"]?.jsonArray?.mapNotNull { docElement ->
                     try {
                         val doc = docElement.jsonObject
                         val fields = doc["fields"]?.jsonObject ?: return@mapNotNull null
@@ -108,33 +107,14 @@ class MiniGameViewModel(
                     }
                 } ?: emptyList()
 
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    games = games.ifEmpty { getDefaultGames() }
-                )
+                println("[MiniGameViewModel] Games loaded: ${games.size} items")
+                _state.value = _state.value.copy(isLoading = false, games = games)
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
-                    isLoading = false,
-                    games = getDefaultGames(),
-                    errorMessage = e.message
-                )
+                println("[MiniGameViewModel] Error: ${e.message}")
+                e.printStackTrace()
+                _state.value = _state.value.copy(isLoading = false, errorMessage = e.message)
             }
         }
-    }
-
-    private fun getDefaultGames(): List<MiniGame> {
-        return listOf(
-            MiniGame(
-                id = "puzzle-marble",
-                name = "퍼즐버블",
-                description = "같은 색 버블 3개를 연결하여 터뜨리세요!",
-                thumbnailUrl = "",
-                gameUrl = "https://heyyoungssoo.web.app/puzzle-marble/",
-                costType = CostType.PLAYS,
-                costAmount = 50,
-                playValue = 9999  // 무제한 (게임 자체에서 종료 처리)
-            )
-        )
     }
 
     fun purchaseGame(game: MiniGame) {

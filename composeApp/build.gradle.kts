@@ -56,6 +56,7 @@ kotlin {
             implementation(libs.koin.android)
             implementation(libs.koin.androidx.compose)
             implementation(libs.ktor.client.okhttp)
+            implementation(libs.androidx.webkit)
             implementation(libs.android.naver)
             implementation(libs.android.kakao)
             implementation(project.dependencies.platform("com.google.firebase:firebase-bom:34.3.0"))

@@ -20,6 +20,8 @@ enum class GameType {
     MATH, VOCAB, HANJA
 }
 
+private const val DEFAULT_STARTING_POINTS = 100
+
 /**
  * 점수/에너지 밸런스 설계:
  *
@@ -110,19 +112,19 @@ class RewardRepository(private val dao: UserStatsDao) {
     private suspend fun loadStats() {
         var stats = dao.getUserStats()
         if (stats != null) {
-            // 테스트용: 기존 유저도 포인트가 100 미만이면 10000으로 충전
-            if (stats.totalPoints < 100) {
-                stats = stats.copy(totalPoints = 10000)
+            // 최소 시작 포인트 보장
+            if (stats.totalPoints < DEFAULT_STARTING_POINTS) {
+                stats = stats.copy(totalPoints = DEFAULT_STARTING_POINTS)
                 dao.insertOrUpdate(stats)
             }
             cachedStats = stats
             syncStateFromEntity(stats)
             checkAndResetDates()
         } else {
-            // 새 유저 생성 (테스트용 포인트 10000 지급)
+            // 새 유저 생성
             val newStats = UserStatsEntity(
                 id = 1,
-                totalPoints = 10000,  // 테스트용 초기 포인트
+                totalPoints = DEFAULT_STARTING_POINTS,
                 lastDate = getCurrentDateString(),
                 lastWeek = getWeeklyString(),
                 lastStreakDate = "",

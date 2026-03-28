@@ -28,7 +28,8 @@ data class GameCompleteData(
     val score: Int = 0,
     val cleared: Boolean = false,
     val nextStage: Int? = null,
-    val customData: String? = null
+    val customData: String? = null,
+    val reason: String? = null
 ) {
     fun toJson(): String = Json.encodeToString(this)
 

@@ -25,3 +25,5 @@ actual fun PlatformBackHandler(enabled: Boolean, onBack: () -> Unit) {
         onBack()
     }
 }
+
+actual fun currentTimeMillis(): Long = System.currentTimeMillis()

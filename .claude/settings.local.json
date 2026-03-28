@@ -10,7 +10,24 @@
       "Bash(GOOGLE_APPLICATION_CREDENTIALS=\"\" node upload_vocab.js:*)",
       "Bash(gcloud auth application-default print-access-token:*)",
       "Bash(ls:*)",
-      "Bash(node upload_vocab_client.mjs:*)"
+      "Bash(node upload_vocab_client.mjs:*)",
+      "WebFetch(domain:heyyoungssoo.web.app)",
+      "Bash(curl -sI \"https://heyyoungssoo.web.app/sky-stairs/\")",
+      "Bash(md5 /Users/jhlee/workspace/youngsso/games/sky-stairs/index.html)",
+      "Bash(curl -s \"https://heyyoungssoo.web.app/sky-stairs/\")",
+      "Bash(md5)",
+      "Bash(git checkout:*)",
+      "Bash(curl -s \"https://heyyoungssoo.web.app/sky-stairs/?wv=test\")",
+      "Bash(firebase hosting:sites:list)",
+      "Bash(firebase --version)",
+      "Bash(npm init:*)",
+      "Read(//Users/jhlee/.config/**)",
+      "Read(//Users/jhlee/.config/firebase/**)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)[:3]\\)\")",
+      "Bash(find ~/.config -name *.json)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(list\\(d.keys\\(\\)\\)\\)\")",
+      "Bash(node:*)",
+      "Bash(firebase login:ci)"
     ]
   }
 }

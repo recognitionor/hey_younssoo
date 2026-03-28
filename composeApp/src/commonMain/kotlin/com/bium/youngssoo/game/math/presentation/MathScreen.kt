@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -241,21 +242,42 @@ fun GamePlayScreen(
             },
             label = "problem_animation"
         ) { problem ->
-            if (problem != null) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                val problemText = if (problem != null) {
+                    "${problem.factor1} ${problem.operator.symbol} ${problem.factor2} = ?"
+                } else {
+                    "..."
+                }
+                val compactWidth = maxWidth < 360.dp
+                val fontSize = when {
+                    compactWidth && problemText.length >= 10 -> 36.sp
+                    compactWidth -> 42.sp
+                    problemText.length >= 10 -> 44.sp
+                    problemText.length >= 8 -> 52.sp
+                    else -> 64.sp
+                }
+                val letterSpacing = when {
+                    fontSize <= 36.sp -> 0.sp
+                    fontSize <= 44.sp -> 1.sp
+                    fontSize <= 52.sp -> 2.sp
+                    else -> 4.sp
+                }
+
                 Text(
-                    text = "${problem.factor1} ${problem.operator.symbol} ${problem.factor2} = ?",
-                    fontSize = 64.sp,
+                    text = problemText,
+                    fontSize = fontSize,
                     fontWeight = FontWeight.Black,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    letterSpacing = 4.sp
-                )
-            } else {
-                Text(
-                    text = "...",
-                    fontSize = 64.sp,
-                    fontWeight = FontWeight.Black,
-                    color = AuraPrimary,
-                    letterSpacing = 4.sp
+                    color = if (problem != null) MaterialTheme.colorScheme.onSurface else AuraPrimary,
+                    letterSpacing = letterSpacing,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
+                    textAlign = TextAlign.Center
                 )
             }
         }

@@ -201,19 +201,19 @@ fun MiniGameListScreen(
         }
         }
 
-        // 테스트 모드 플로팅 버튼
-        TestModeFloatingButton(
-            currentPoints = state.totalPoints,
-            onSetPoints = { points ->
-                viewModel.setPointsForTesting(points)
-            },
-            onResetProgress = {
-                viewModel.resetAllGameProgress()
-            },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        )
+//        // 테스트 모드 플로팅 버튼
+//        TestModeFloatingButton(
+//            currentPoints = state.totalPoints,
+//            onSetPoints = { points ->
+//                viewModel.setPointsForTesting(points)
+//            },
+//            onResetProgress = {
+//                viewModel.resetAllGameProgress()
+//            },
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp)
+//        )
     }
 }
 
