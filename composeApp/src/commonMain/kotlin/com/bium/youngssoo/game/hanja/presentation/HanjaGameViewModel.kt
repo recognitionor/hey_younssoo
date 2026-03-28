@@ -26,6 +26,10 @@ data class HanjaGameState(
     val isCorrectLastAnswer: Boolean? = null,
     val sessionScore: Int = 0,
     val correctAnswers: Int = 0,
+    val availableGrades: List<String> = emptyList(),
+    val selectedGrades: Set<String> = emptySet(),
+    val availableQuestionCount: Int = 0,
+    val filteredQuestionCount: Int = 0,
     val errorMessage: String? = null
 )
 
@@ -37,8 +41,25 @@ class HanjaGameViewModel(
     private val _state = MutableStateFlow(HanjaGameState())
     val state: StateFlow<HanjaGameState> = _state.asStateFlow()
 
+    private var allQuestions: List<QuestionEntity> = emptyList()
     private var questions: List<QuestionEntity> = emptyList()
     private var currentQuestionIndex = 0
+
+    private val gradeOrder = listOf(
+        "8급",
+        "7급2",
+        "7급",
+        "6급2",
+        "6급",
+        "5급2",
+        "5급",
+        "4급2",
+        "4급",
+        "3급2",
+        "3급",
+        "2급",
+        "1급"
+    )
 
     // 기본 한자 단어 (Firebase에서 데이터를 못 가져올 경우 대비)
     private val fallbackWords = listOf(
@@ -66,7 +87,9 @@ class HanjaGameViewModel(
             questionRepository?.syncQuestions(QuestionCategory.HANJA)
 
             // 로컬 DB에서 문제 가져오기
-            questions = questionRepository?.getQuestions(QuestionCategory.HANJA) ?: emptyList()
+            allQuestions = questionRepository?.getQuestions(QuestionCategory.HANJA) ?: emptyList()
+            questions = emptyList()
+            updateGradeState()
 
             _state.value = _state.value.copy(
                 isLoading = false,
@@ -80,7 +103,9 @@ class HanjaGameViewModel(
             _state.value = _state.value.copy(isLoading = true)
 
             questionRepository?.syncQuestions(QuestionCategory.HANJA, forceRefresh = true)
-            questions = questionRepository?.getQuestions(QuestionCategory.HANJA) ?: emptyList()
+            allQuestions = questionRepository?.getQuestions(QuestionCategory.HANJA) ?: emptyList()
+            questions = emptyList()
+            updateGradeState()
 
             _state.value = _state.value.copy(
                 isLoading = false,
@@ -90,8 +115,27 @@ class HanjaGameViewModel(
     }
 
     fun startGame() {
+        val currentState = _state.value
+        val hasGradeSelection = currentState.availableGrades.isNotEmpty()
+
+        if (hasGradeSelection && currentState.selectedGrades.isEmpty()) {
+            _state.value = currentState.copy(errorMessage = "응시할 급수를 하나 이상 선택해 주세요.")
+            return
+        }
+
+        questions = when {
+            allQuestions.isEmpty() -> emptyList()
+            hasGradeSelection -> filterQuestionsByGrades(currentState.selectedGrades)
+            else -> filterableQuestions().shuffled()
+        }
+
+        if (allQuestions.isNotEmpty() && questions.isEmpty()) {
+            _state.value = currentState.copy(errorMessage = "선택한 급수에 해당하는 문제가 없습니다.")
+            return
+        }
+
         currentQuestionIndex = 0
-        _state.value = _state.value.copy(
+        _state.value = currentState.copy(
             isPlaying = true,
             isGameOver = false,
             currentRound = 1,
@@ -130,7 +174,10 @@ class HanjaGameViewModel(
 
         if (currentQuestionIndex >= questions.size) {
             currentQuestionIndex = 0
-            questions = questions.shuffled()
+            questions = when {
+                currentState.availableGrades.isNotEmpty() -> filterQuestionsByGrades(currentState.selectedGrades)
+                else -> filterableQuestions().shuffled()
+            }
         }
 
         val questionEntity = questions[currentQuestionIndex]
@@ -208,5 +255,101 @@ class HanjaGameViewModel(
             isGameOver = false,
             currentProblem = null
         )
+    }
+
+    fun toggleGradeSelection(grade: String, selected: Boolean) {
+        val currentState = _state.value
+        val updatedSelection = if (selected) {
+            currentState.selectedGrades + grade
+        } else {
+            currentState.selectedGrades - grade
+        }
+
+        questions = if (updatedSelection.isEmpty()) {
+            emptyList()
+        } else {
+            filterQuestionsByGrades(updatedSelection)
+        }
+
+        _state.value = currentState.copy(
+            selectedGrades = updatedSelection,
+            filteredQuestionCount = if (currentState.availableGrades.isEmpty()) {
+                allQuestions.size
+            } else {
+                questions.size
+            },
+            errorMessage = null
+        )
+    }
+
+    fun selectAllGrades() {
+        val allGrades = _state.value.availableGrades.toSet()
+        questions = if (allGrades.isEmpty()) emptyList() else filterQuestionsByGrades(allGrades)
+        _state.value = _state.value.copy(
+            selectedGrades = allGrades,
+            filteredQuestionCount = if (allGrades.isEmpty()) allQuestions.size else questions.size,
+            errorMessage = null
+        )
+    }
+
+    fun clearGradeSelection() {
+        questions = emptyList()
+        _state.value = _state.value.copy(
+            selectedGrades = emptySet(),
+            filteredQuestionCount = 0,
+            errorMessage = null
+        )
+    }
+
+    private fun updateGradeState() {
+        val availableGrades = allQuestions
+            .map { it.grade }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sortedWith(compareBy({ gradeSortKey(it) }, { it }))
+
+        val currentSelection = _state.value.selectedGrades
+        val preservedSelection = currentSelection.intersect(availableGrades.toSet())
+        val selectedGrades = when {
+            availableGrades.isEmpty() -> emptySet()
+            preservedSelection.isNotEmpty() -> preservedSelection
+            else -> availableGrades.toSet()
+        }
+
+        questions = when {
+            availableGrades.isEmpty() -> filterableQuestions().shuffled()
+            selectedGrades.isEmpty() -> emptyList()
+            else -> filterQuestionsByGrades(selectedGrades)
+        }
+
+        val filterableQuestionCount = if (availableGrades.isEmpty()) {
+            filterableQuestions().size
+        } else {
+            allQuestions.count { it.grade.isNotBlank() }
+        }
+
+        _state.value = _state.value.copy(
+            availableGrades = availableGrades,
+            selectedGrades = selectedGrades,
+            availableQuestionCount = filterableQuestionCount,
+            filteredQuestionCount = if (availableGrades.isEmpty()) filterableQuestionCount else questions.size
+        )
+    }
+
+    private fun filterQuestionsByGrades(selectedGrades: Set<String>): List<QuestionEntity> {
+        if (selectedGrades.isEmpty()) return emptyList()
+        return allQuestions
+            .filter { it.grade in selectedGrades }
+            .shuffled()
+    }
+
+    private fun filterableQuestions(): List<QuestionEntity> {
+        val gradedQuestions = allQuestions.filter { it.grade.isNotBlank() }
+        return if (gradedQuestions.isNotEmpty()) gradedQuestions else allQuestions
+    }
+
+    private fun gradeSortKey(grade: String): Int {
+        val index = gradeOrder.indexOf(grade)
+        return if (index >= 0) index else Int.MAX_VALUE
     }
 }

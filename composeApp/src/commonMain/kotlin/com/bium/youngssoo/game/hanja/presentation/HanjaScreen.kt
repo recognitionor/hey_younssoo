@@ -2,10 +2,13 @@ package com.bium.youngssoo.game.hanja.presentation
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +52,13 @@ fun HanjaScreen(viewModel: HanjaGameViewModel, onNavigateBack: () -> Unit) {
                     onStart = { viewModel.startGame() },
                     onBack = onNavigateBack,
                     onRefresh = { viewModel.refreshQuestions() },
+                    availableGrades = state.availableGrades,
+                    selectedGrades = state.selectedGrades,
+                    availableQuestionCount = state.availableQuestionCount,
+                    filteredQuestionCount = state.filteredQuestionCount,
+                    onToggleGrade = viewModel::toggleGradeSelection,
+                    onSelectAllGrades = viewModel::selectAllGrades,
+                    onClearGradeSelection = viewModel::clearGradeSelection,
                     errorMessage = state.errorMessage
                 )
             }
@@ -75,8 +85,19 @@ fun HanjaStartScreen(
     onStart: () -> Unit,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
+    availableGrades: List<String>,
+    selectedGrades: Set<String>,
+    availableQuestionCount: Int,
+    filteredQuestionCount: Int,
+    onToggleGrade: (String, Boolean) -> Unit,
+    onSelectAllGrades: () -> Unit,
+    onClearGradeSelection: () -> Unit,
     errorMessage: String?
 ) {
+    val hasGradeData = availableGrades.isNotEmpty()
+    val contentScrollState = rememberScrollState()
+    val gradeScrollState = rememberScrollState()
+
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
@@ -93,66 +114,216 @@ fun HanjaStartScreen(
             }
         }
 
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .size(120.dp)
-                    .clip(CircleShape)
-                    .background(AuraPrimaryContainer.copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
+                    .fillMaxSize()
+                    .verticalScroll(contentScrollState)
+                    .padding(bottom = 112.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Top
             ) {
+                Spacer(modifier = Modifier.height(8.dp))
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(120.dp)
                         .clip(CircleShape)
-                        .background(
-                            androidx.compose.ui.graphics.Brush.linearGradient(
-                                listOf(AuraPrimary, AuraSecondary)
-                            )
-                        ),
+                        .background(AuraPrimaryContainer.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
                 ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(
+                                androidx.compose.ui.graphics.Brush.linearGradient(
+                                    listOf(AuraPrimary, AuraSecondary)
+                                )
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "漢",
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AuraOnPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(28.dp))
+                Text(
+                    text = "한자",
+                    fontSize = 40.sp,
+                    fontWeight = FontWeight.Black,
+                    color = AuraPrimary,
+                    letterSpacing = 2.sp
+                )
+
+                if (hasGradeData) {
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(0.92f),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f)
+                        ),
+                        border = BorderStroke(1.dp, AuraPrimary.copy(alpha = 0.24f)),
+                        shape = RoundedCornerShape(24.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp)
+                        ) {
+                            Text(
+                                text = "응시할 급수를 선택하세요",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "체크한 급수의 한자만 섞어서 출제됩니다.",
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = onSelectAllGrades,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(14.dp)
+                                ) {
+                                    Text("전체 선택")
+                                }
+                                OutlinedButton(
+                                    onClick = onClearGradeSelection,
+                                    modifier = Modifier.weight(1f),
+                                    shape = RoundedCornerShape(14.dp)
+                                ) {
+                                    Text("선택 해제")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 140.dp)
+                                    .verticalScroll(gradeScrollState),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                availableGrades.chunked(2).forEach { rowGrades ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                    ) {
+                                        rowGrades.forEach { grade ->
+                                            GradeCheckboxCard(
+                                                grade = grade,
+                                                checked = grade in selectedGrades,
+                                                modifier = Modifier.weight(1f),
+                                                onCheckedChange = { checked -> onToggleGrade(grade, checked) }
+                                            )
+                                        }
+                                        if (rowGrades.size == 1) {
+                                            Spacer(modifier = Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(
+                                text = "선택 급수 ${selectedGrades.size}개 · 출제 가능 ${filteredQuestionCount}문제 / 전체 ${availableQuestionCount}문제",
+                                fontSize = 13.sp,
+                                color = if (selectedGrades.isEmpty()) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    AuraSecondary
+                                }
+                            )
+                        }
+                    }
+                }
+
+                if (errorMessage != null) {
+                    Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "漢",
-                        fontSize = 36.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = AuraOnPrimary
+                        text = errorMessage,
+                        color = MaterialTheme.colorScheme.error,
+                        fontSize = 14.sp
                     )
                 }
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
-            Spacer(modifier = Modifier.height(40.dp))
-            Text(
-                text = "한자",
-                fontSize = 40.sp,
-                fontWeight = FontWeight.Black,
-                color = AuraPrimary,
-                letterSpacing = 2.sp
-            )
-
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = errorMessage,
-                    color = MaterialTheme.colorScheme.error,
-                    fontSize = 14.sp
-                )
-            }
-
-            Spacer(modifier = Modifier.height(64.dp))
             Button(
                 onClick = onStart,
                 colors = ButtonDefaults.buttonColors(containerColor = AuraPrimary),
                 shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.fillMaxWidth(0.85f).height(64.dp),
-                enabled = errorMessage == null
+                modifier = Modifier
+                    .fillMaxWidth(0.85f)
+                    .height(64.dp)
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding(),
+                enabled = errorMessage == null && (!hasGradeData || selectedGrades.isNotEmpty())
             ) {
                 Text("게임 시작", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AuraOnPrimary)
             }
+        }
+    }
+}
+
+@Composable
+private fun GradeCheckboxCard(
+    grade: String,
+    checked: Boolean,
+    modifier: Modifier = Modifier,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(16.dp),
+        color = if (checked) {
+            AuraPrimary.copy(alpha = 0.14f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        },
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (checked) AuraPrimary.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+        ),
+        onClick = { onCheckedChange(!checked) }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onCheckedChange
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = grade,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
@@ -227,7 +398,7 @@ fun HanjaPlayScreen(
         val problem = state.currentProblem
         if (problem != null) {
             Text(
-                text = "이 한자의 뜻은?",
+                text = "이 한자의 음훈은?",
                 fontSize = 20.sp,
                 color = MaterialTheme.colorScheme.primary
             )

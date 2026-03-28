@@ -25,6 +25,7 @@ data class QuestionEntity(
     val question: String,      // 문제 (영어 단어 또는 한자)
     val answer: String,        // 정답 (한글 뜻)
     val options: String,       // JSON 형태의 선택지 리스트
+    val grade: String = "",    // 한자 급수 (예: "8급", "5급2")
     val difficulty: Int = 1,   // 난이도 (1: 쉬움, 2: 보통, 3: 어려움)
     val updatedAt: Long = 0    // 마지막 업데이트 시간
 )

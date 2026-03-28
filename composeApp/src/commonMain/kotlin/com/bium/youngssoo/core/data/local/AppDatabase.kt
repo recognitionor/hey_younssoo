@@ -16,7 +16,7 @@ import com.bium.youngssoo.reward.data.local.UserStatsEntity
 
 @Database(
     entities = [UserStatsEntity::class, QuestionEntity::class, MiniGameProgressEntity::class],
-    version = 4
+    version = 5
 )
 @TypeConverters(StringListTypeConverter::class, QuestionCategoryConverter::class)
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -26,6 +26,13 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun miniGameProgressDao(): MiniGameProgressDao
 
     companion object {
+        // Version 4 -> 5: 문제 테이블에 grade 컬럼 추가
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE questions ADD COLUMN grade TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         // Version 3 -> 4: 미니게임 진행도 테이블 추가
         val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(connection: SQLiteConnection) {

@@ -3363,3 +3363,8 @@ captures
 /tools/package-lock.json
 /tools/seed-mini-games.mjs
 /AGENTS.md
+/apply_icons.sh
+/format_appstore_screens.py
+/generate_icons.sh
+/generate_store_screenshots.py
+/process_real_screenshots.py

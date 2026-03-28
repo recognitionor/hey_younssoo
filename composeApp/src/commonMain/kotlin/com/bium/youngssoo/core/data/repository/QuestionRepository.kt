@@ -110,6 +110,7 @@ class QuestionRepository(
 
                     val question = fields["question"]?.jsonObject?.get("stringValue")?.jsonPrimitive?.content ?: ""
                     val answer = fields["answer"]?.jsonObject?.get("stringValue")?.jsonPrimitive?.content ?: ""
+                    val grade = fields["grade"]?.jsonObject?.get("stringValue")?.jsonPrimitive?.content ?: ""
                     val difficulty = fields["difficulty"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 1
                     val updatedAt = fields["updatedAt"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.longOrNull ?: 0L
 
@@ -127,6 +128,7 @@ class QuestionRepository(
                             ListSerializer(String.serializer()),
                             options
                         ),
+                        grade = grade,
                         difficulty = difficulty,
                         updatedAt = updatedAt
                     )
