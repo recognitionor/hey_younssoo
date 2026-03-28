@@ -21,7 +21,6 @@ import com.bium.youngssoo.minigame.data.model.MiniGame
 import com.bium.youngssoo.minigame.presentation.GameInitData
 import com.bium.youngssoo.minigame.presentation.MiniGameListScreen
 import com.bium.youngssoo.minigame.presentation.MiniGameViewModel
-import com.bium.youngssoo.minigame.presentation.TestWebViewScreen
 import com.bium.youngssoo.minigame.presentation.WebViewGameScreen
 import kotlinx.coroutines.launch
 import com.bium.youngssoo.reward.presentation.RewardScreen
