@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -32,6 +33,66 @@ fun MiniGameListScreen(
     val state by viewModel.state.collectAsState()
     var showInsufficientDialog by remember { mutableStateOf(false) }
     var selectedGame by remember { mutableStateOf<MiniGame?>(null) }
+
+    // 해금 확인 다이얼로그
+    if (state.showUnlockDialog && state.pendingUnlockGame != null) {
+        val game = state.pendingUnlockGame!!
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissUnlockDialog() },
+            containerColor = Color(0xFF252540),
+            title = {
+                Text(
+                    "${game.name} 영구 해금",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        "한 번 해금하면 이후에는 무료로 플레이할 수 있어요!",
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("해금 가격", color = Color.Gray)
+                        Text("${game.unlockPrice} pts", color = AuraTertiary, fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text("보유 포인트", color = Color.Gray)
+                        Text(
+                            "${state.totalPoints} pts",
+                            color = if (state.totalPoints >= game.unlockPrice) Color.White else Color(0xFFFF6B6B),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.confirmUnlock { onPlayGame(it) } },
+                    enabled = state.totalPoints >= game.unlockPrice
+                ) {
+                    Text(
+                        "해금하기",
+                        color = if (state.totalPoints >= game.unlockPrice) AuraPrimary else Color.Gray
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissUnlockDialog() }) {
+                    Text("취소", color = Color.Gray)
+                }
+            }
+        )
+    }
 
     // 포인트 부족 다이얼로그
     if (showInsufficientDialog && selectedGame != null) {
@@ -180,20 +241,19 @@ fun MiniGameListScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(state.games) { game ->
-                    val currentStage = state.gameProgress[game.id] ?: 1
+                    val progress = state.gameProgress[game.id]
+                    val currentStage = progress?.currentStage ?: 1
+                    val isUnlocked = progress?.isUnlocked ?: false
+                    val hasNewVersion = viewModel.hasNewVersion(game)
+
                     MiniGameCard(
                         game = game,
+                        progress = progress,
                         currentStage = currentStage,
-                        canAfford = state.totalPoints >= game.costAmount,
+                        isUnlocked = isUnlocked,
+                        hasNewVersion = hasNewVersion,
                         onClick = {
-                            if (state.totalPoints >= game.costAmount) {
-                                viewModel.purchaseGame(game)
-                                onPlayGame(game)
-                            } else {
-                                // 포인트 부족 다이얼로그 표시
-                                selectedGame = game
-                                showInsufficientDialog = true
-                            }
+                            viewModel.onGameClicked(game, onPlayGame)
                         }
                     )
                 }
@@ -220,113 +280,171 @@ fun MiniGameListScreen(
 @Composable
 fun MiniGameCard(
     game: MiniGame,
+    progress: com.bium.youngssoo.minigame.data.local.MiniGameProgressEntity?,
     currentStage: Int = 1,
-    canAfford: Boolean,
+    isUnlocked: Boolean,
+    hasNewVersion: Boolean,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },  // 항상 클릭 가능
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (canAfford)
-                MaterialTheme.colorScheme.surfaceVariant
-            else
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 게임 아이콘
-            Box(
+        Box {
+            Row(
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            colors = listOf(AuraPrimary.copy(alpha = 0.3f), AuraSecondary.copy(alpha = 0.3f))
-                        )
-                    ),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    Icons.Default.PlayArrow,
-                    contentDescription = null,
-                    tint = AuraPrimary,
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+                // 게임 아이콘
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(AuraPrimary.copy(alpha = 0.3f), AuraSecondary.copy(alpha = 0.3f))
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = game.name,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (canAfford)
-                            MaterialTheme.colorScheme.onSurface
-                        else
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    // 현재 스테이지 뱃지
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(AuraPrimary.copy(alpha = 0.2f))
-                            .padding(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "Stage $currentStage",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = AuraPrimary
+                    if (!isUnlocked && game.unlockPrice > 0) {
+                        Icon(
+                            Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.Gray,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    } else {
+                        Icon(
+                            Icons.Default.PlayArrow,
+                            contentDescription = null,
+                            tint = AuraPrimary,
+                            modifier = Modifier.size(32.dp)
                         )
                     }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = game.description,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(8.dp))
 
-                // 비용 표시
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = null,
-                        tint = if (canAfford) AuraTertiary else AuraTertiary.copy(alpha = 0.5f),
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = game.name,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        if (isUnlocked) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            // 현재 스테이지 뱃지
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(AuraPrimary.copy(alpha = 0.2f))
+                                    .padding(horizontal = 8.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "Stage $currentStage",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = AuraPrimary
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "${game.costAmount} pts",
+                        text = game.description,
                         fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = if (canAfford) AuraTertiary else AuraTertiary.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when (game.costType) {
-                            CostType.TIME -> "${game.playValue / 60}분"
-                            CostType.PLAYS -> "${game.playValue}판"
-                        },
-                        fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // 잠금 상태 또는 비용 표시
+                    if (!isUnlocked && game.unlockPrice > 0) {
+                        // 잠금 상태
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Lock,
+                                contentDescription = null,
+                                tint = Color.Gray,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${game.unlockPrice} pts로 해금",
+                                fontSize = 14.sp,
+                                color = AuraTertiary,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    } else {
+                        // 해금됨 - 플레이 비용 표시
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Star,
+                                contentDescription = null,
+                                tint = AuraTertiary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "${game.costAmount} pts",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = AuraTertiary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = when (game.costType) {
+                                    CostType.TIME -> "${game.playValue / 60}분"
+                                    CostType.PLAYS -> "${game.playValue}판"
+                                },
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // NEW 뱃지 (오른쪽 위)
+            if (hasNewVersion) {
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color(0xFFFF6B00).copy(alpha = 0.9f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
+                        .align(Alignment.TopEnd)
+                        .padding(8.dp)
+                ) {
+                    Text(
+                        "NEW",
+                        fontSize = 10.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
+
+            // 버전 표시 (오른쪽 아래)
+            Text(
+                text = "v${game.version}",
+                fontSize = 11.sp,
+                color = Color.Gray,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
+            )
         }
     }
 }

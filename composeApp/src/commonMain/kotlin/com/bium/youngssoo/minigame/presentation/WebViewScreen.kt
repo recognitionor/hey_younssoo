@@ -142,7 +142,8 @@ fun WebViewGameScreen(
                 gameData = GameInitData(
                     stage = currentStage,
                     highScore = gameInitData?.highScore ?: 0,
-                    customData = gameInitData?.customData ?: "{}"
+                    customData = gameInitData?.customData ?: "{}",
+                    version = game.version
                 ),
                 onScoreUpdate = { score -> gameScore = score },
                 onGameComplete = { completeData ->

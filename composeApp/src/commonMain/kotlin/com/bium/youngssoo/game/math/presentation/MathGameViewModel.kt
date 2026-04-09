@@ -2,6 +2,9 @@ package com.bium.youngssoo.game.math.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bium.youngssoo.core.media.SoundPlayer
+import com.bium.youngssoo.core.media.SoundType
+import com.bium.youngssoo.core.presentation.components.PointsBreakdown
 import com.bium.youngssoo.game.math.domain.model.MathOperator
 import com.bium.youngssoo.game.math.domain.model.MathProblem
 import com.bium.youngssoo.game.math.domain.model.MathResult
@@ -24,15 +27,66 @@ data class MathGameState(
     val isGameOver: Boolean = false,
     val sessionScore: Int = 0,
     val currentRound: Int = 1,
-    val correctAnswers: Int = 0
+    val correctAnswers: Int = 0,
+    val expectedScore: Int = 0,
+    val comboCount: Int = 0,
+    val lastPointsBreakdown: PointsBreakdown? = null
 )
 
-class MathGameViewModel(private val rewardRepository: RewardRepository) : ViewModel() {
+class MathGameViewModel(
+    private val rewardRepository: RewardRepository,
+    private val soundPlayer: SoundPlayer
+) : ViewModel() {
     private val _state = MutableStateFlow(MathGameState())
     val state: StateFlow<MathGameState> = _state.asStateFlow()
 
     private var timerJob: Job? = null
     private var problemStartTime: Long = 0L
+
+    private fun getTimeLimit(round: Int): Long {
+        return when (round) {
+            1 -> 5000L   // 5초
+            2 -> 6000L   // 6초
+            3 -> 7000L   // 7초
+            4 -> 10000L  // 10초
+            5 -> 12000L  // 12초
+            else -> 7000L
+        }
+    }
+
+    private fun getMaxRewardForRound(round: Int): Int {
+        return when (round) {
+            1, 2, 3 -> 100
+            4 -> 200    // 4라운드: 배점 2배
+            5 -> 300    // 5라운드: 배점 3배
+            else -> 100
+        }
+    }
+
+    private fun calculateTierForRound(timeTaken: Long, round: Int): RewardTier {
+        return if (timeTaken <= 1500L) {
+            RewardTier.HUGE
+        } else if (timeTaken <= 3000L) {
+            RewardTier.MEDIUM
+        } else if (timeTaken <= 5000L) {
+            RewardTier.SMALL
+        } else {
+            RewardTier.MINIMAL
+        }
+    }
+
+    private fun getPointsForTier(tier: RewardTier, round: Int): Int {
+        val basePoints = tier.points
+        val multiplier = getMaxRewardForRound(round) / 100
+        return basePoints * multiplier
+    }
+
+    private fun calculateExpectedScore(timeTaken: Long, round: Int): Int {
+        val timeLimit = getTimeLimit(round)
+        val tier = calculateTierForRound(timeTaken, round)
+        val points = getPointsForTier(tier, round)
+        return if (timeTaken < timeLimit) points else 0
+    }
 
     fun startGame() {
         _state.value = _state.value.copy(
@@ -109,10 +163,13 @@ class MathGameViewModel(private val rewardRepository: RewardRepository) : ViewMo
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
             while (true) {
-                delay(50) 
+                delay(50)
                 val now = Clock.System.now().toEpochMilliseconds()
+                val elapsed = now - problemStartTime
+                val expectedScore = calculateExpectedScore(elapsed, _state.value.currentRound)
                 _state.value = _state.value.copy(
-                    timeElapsedMillis = now - problemStartTime
+                    timeElapsedMillis = elapsed,
+                    expectedScore = expectedScore
                 )
             }
         }
@@ -139,36 +196,41 @@ class MathGameViewModel(private val rewardRepository: RewardRepository) : ViewMo
         val inputInt = currentState.userInput.toIntOrNull()
         val isCorrect = inputInt == currentState.currentProblem.correctAnswer
         val timeTaken = currentState.timeElapsedMillis
+        val currentRound = currentState.currentRound
 
         val tier = if (isCorrect) {
-            when {
-                timeTaken <= 1500L -> RewardTier.HUGE 
-                timeTaken <= 2500L -> RewardTier.MEDIUM
-                timeTaken <= 3500L -> RewardTier.SMALL
-                else -> RewardTier.MINIMAL
-            }
+            calculateTierForRound(timeTaken, currentRound)
         } else {
             RewardTier.NONE
         }
+
+        val points = if (isCorrect) getPointsForTier(tier, currentRound) else 0
 
         val result = MathResult(
             problem = currentState.currentProblem,
             isCorrect = isCorrect,
             timeTakenMillis = timeTaken,
-            rewardTier = tier
+            rewardTier = tier,
+            points = points
         )
-        
-        if (tier.points > 0) {
-            rewardRepository.addPoints(tier.points)
+
+        // 정답/오답 사운드 재생
+        soundPlayer.playSound(
+            if (isCorrect) SoundType.CORRECT else SoundType.INCORRECT
+        )
+
+        if (points > 0) {
+            rewardRepository.addPoints(points)
         }
 
         val newCorrectCount = if (isCorrect) currentState.correctAnswers + 1 else currentState.correctAnswers
 
         _state.value = currentState.copy(
             lastResult = result,
-            sessionScore = currentState.sessionScore + tier.points,
+            sessionScore = currentState.sessionScore + points,
             correctAnswers = newCorrectCount,
-            userInput = ""
+            userInput = "",
+            expectedScore = 0
         )
 
         viewModelScope.launch {

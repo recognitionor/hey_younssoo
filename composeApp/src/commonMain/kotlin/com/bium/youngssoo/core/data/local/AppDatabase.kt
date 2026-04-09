@@ -16,7 +16,7 @@ import com.bium.youngssoo.reward.data.local.UserStatsEntity
 
 @Database(
     entities = [UserStatsEntity::class, QuestionEntity::class, MiniGameProgressEntity::class],
-    version = 5
+    version = 6
 )
 @TypeConverters(StringListTypeConverter::class, QuestionCategoryConverter::class)
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -26,6 +26,15 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun miniGameProgressDao(): MiniGameProgressDao
 
     companion object {
+        // Version 5 -> 6: 미니게임 진행도 테이블에 해금 관련 컬럼 추가
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(connection: SQLiteConnection) {
+                connection.execSQL("ALTER TABLE mini_game_progress ADD COLUMN isUnlocked INTEGER NOT NULL DEFAULT 0")
+                connection.execSQL("ALTER TABLE mini_game_progress ADD COLUMN unlockedAt INTEGER NOT NULL DEFAULT 0")
+                connection.execSQL("ALTER TABLE mini_game_progress ADD COLUMN playedVersion INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         // Version 4 -> 5: 문제 테이블에 grade 컬럼 추가
         val MIGRATION_4_5 = object : Migration(4, 5) {
             override fun migrate(connection: SQLiteConnection) {
@@ -104,4 +113,6 @@ abstract class AppDatabase : RoomDatabase() {
 }
 
 // Room 2.7.0+ KMP 지원을 위한 생성자 인터페이스
-expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase>
+expect object AppDatabaseConstructor : RoomDatabaseConstructor<AppDatabase> {
+    override fun initialize(): AppDatabase
+}

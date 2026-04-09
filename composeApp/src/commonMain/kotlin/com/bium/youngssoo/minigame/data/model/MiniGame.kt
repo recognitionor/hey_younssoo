@@ -14,7 +14,9 @@ data class MiniGame(
     val gameUrl: String,           // 게임 HTML URL
     val costType: CostType,        // 비용 타입
     val costAmount: Int,           // 비용 (포인트)
-    val playValue: Int             // 플레이 가능 시간(초) 또는 판수
+    val playValue: Int,            // 플레이 가능 시간(초) 또는 판수
+    val unlockPrice: Int = 0,      // 영구 해금 가격 (0이면 해금 불필요)
+    val version: Int = 1           // 게임 HTML 버전
 )
 
 enum class CostType {

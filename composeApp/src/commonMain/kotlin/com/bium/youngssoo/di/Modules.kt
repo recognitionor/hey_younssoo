@@ -2,6 +2,7 @@ package com.bium.youngssoo.di
 
 import com.bium.youngssoo.core.data.HttpClientFactory
 import com.bium.youngssoo.core.data.repository.QuestionRepository
+import com.bium.youngssoo.core.media.SoundPlayer
 import com.bium.youngssoo.game.math.presentation.MathGameViewModel
 import com.bium.youngssoo.game.vocab.presentation.VocabGameViewModel
 import com.bium.youngssoo.game.hanja.presentation.HanjaGameViewModel
@@ -14,6 +15,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
 import com.bium.youngssoo.core.data.local.AppDatabase
+import com.bium.youngssoo.core.media.createSoundPlayer
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.HttpTimeout
@@ -26,6 +28,7 @@ val sharedModules = module {
     single { get<AppDatabase>().userStatsDao() }
     single { get<AppDatabase>().questionDao() }
     single { get<AppDatabase>().miniGameProgressDao() }
+    single<SoundPlayer> { createSoundPlayer() }
     single { RewardRepository(get()) }
     single { MiniGameProgressRepository(get()) }
 

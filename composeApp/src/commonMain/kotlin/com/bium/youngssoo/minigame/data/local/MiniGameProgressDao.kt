@@ -36,4 +36,13 @@ interface MiniGameProgressDao {
 
     @Query("UPDATE mini_game_progress SET totalPlayTime = totalPlayTime + :duration WHERE gameId = :gameId")
     suspend fun addPlayTime(gameId: String, duration: Long)
+
+    @Query("UPDATE mini_game_progress SET isUnlocked = 1, unlockedAt = :timestamp WHERE gameId = :gameId")
+    suspend fun unlock(gameId: String, timestamp: Long)
+
+    @Query("SELECT isUnlocked FROM mini_game_progress WHERE gameId = :gameId")
+    suspend fun isUnlocked(gameId: String): Boolean?
+
+    @Query("UPDATE mini_game_progress SET playedVersion = :version WHERE gameId = :gameId")
+    suspend fun updatePlayedVersion(gameId: String, version: Int)
 }

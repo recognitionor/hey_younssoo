@@ -64,6 +64,20 @@ class MiniGameProgressRepository(
         dao.insertOrUpdate(progress)
     }
 
+    suspend fun unlockGame(gameId: String) {
+        ensureProgressExists(gameId)
+        dao.unlock(gameId, currentTimeMillis())
+    }
+
+    suspend fun isUnlocked(gameId: String): Boolean {
+        return dao.isUnlocked(gameId) ?: false
+    }
+
+    suspend fun updatePlayedVersion(gameId: String, version: Int) {
+        ensureProgressExists(gameId)
+        dao.updatePlayedVersion(gameId, version)
+    }
+
     private suspend fun ensureProgressExists(gameId: String) {
         if (dao.getProgress(gameId) == null) {
             dao.insertOrUpdate(MiniGameProgressEntity(gameId = gameId))

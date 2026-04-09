@@ -58,10 +58,23 @@ actual fun PlatformWebView(
     var isReady by remember(url) { mutableStateOf(false) }
     var htmlContent by remember(url) { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(url) {
+    LaunchedEffect(url, gameData?.version) {
+        // 게임 버전이 바뀌면 로컬 캐시 삭제 (강제 재다운로드)
+        val versionPath = "$gameCacheDir/.version"
+        val storedVersion = readFileAsString(versionPath)?.toIntOrNull() ?: 0
+        val newVersion = gameData?.version ?: 1
+
+        if (storedVersion != newVersion) {
+            // 버전이 다르면 캐시 삭제
+            NSFileManager.defaultManager.removeItemAtPath(gameCacheDir, error = null)
+            NSFileManager.defaultManager.createDirectoryAtPath(
+                gameCacheDir, withIntermediateDirectories = true, attributes = null, error = null
+            )
+        }
+
         // 항상 ETag 체크 후 로드 (서버 변경 시 즉시 반영)
         withContext(Dispatchers.Default) {
-            downloadAndCacheGameIOS(httpClient, url, gameId, gameCacheDir)
+            downloadAndCacheGameIOS(httpClient, url, gameId, gameCacheDir, newVersion)
         }
         val htmlPath = "$gameCacheDir/index.html"
         htmlContent = if (NSFileManager.defaultManager.fileExistsAtPath(htmlPath)) {
@@ -137,11 +150,13 @@ private suspend fun downloadAndCacheGameIOS(
     httpClient: HttpClient,
     remoteUrl: String,
     gameId: String,
-    cacheDir: String
+    cacheDir: String,
+    version: Int
 ) {
     try {
         val etagPath = "$cacheDir/.etag"
         val htmlPath = "$cacheDir/index.html"
+        val versionPath = "$cacheDir/.version"
 
         val storedEtag = readFileAsString(etagPath)
 
@@ -152,7 +167,11 @@ private suspend fun downloadAndCacheGameIOS(
         }
 
         when (response.status.value) {
-            304 -> return // Not Modified → 캐시 그대로
+            304 -> {
+                // Not Modified → 캐시 유지, 버전만 업데이트
+                version.toString().toNSData()?.writeToFile(versionPath, atomically = true)
+                return
+            }
             200 -> {
                 val html = response.body<String>()
                 val baseUrl = remoteUrl.trimEnd('/') + "/"
@@ -163,6 +182,9 @@ private suspend fun downloadAndCacheGameIOS(
                 if (newEtag != null) {
                     newEtag.toNSData()?.writeToFile(etagPath, atomically = true)
                 }
+
+                // 버전 저장
+                version.toString().toNSData()?.writeToFile(versionPath, atomically = true)
             }
             else -> return // 에러 → 기존 캐시 유지
         }

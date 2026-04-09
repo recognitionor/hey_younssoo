@@ -30,7 +30,13 @@
       "Bash(firebase login:ci)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(firebase hosting:channel:list:*)",
+      "Bash(wget -q -O /tmp/deployed_number_ball.html https://heyyoungssoo.web.app/number-ball/index.html)",
+      "Read(//tmp/**)",
+      "Bash(python3 -c \"import urllib.request; urllib.request.urlretrieve\\('https://heyyoungssoo.web.app/number-ball/index.html', '/tmp/deployed_number_ball.html'\\)\")",
+      "Bash(grep:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

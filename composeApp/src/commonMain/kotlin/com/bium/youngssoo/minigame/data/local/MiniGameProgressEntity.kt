@@ -15,5 +15,8 @@ data class MiniGameProgressEntity(
     val totalPlayCount: Int = 0,     // 총 플레이 횟수
     val totalPlayTime: Long = 0,     // 총 플레이 시간 (밀리초)
     val lastPlayedAt: Long = 0,      // 마지막 플레이 시간
-    val customData: String = "{}"    // 게임별 커스텀 데이터 (JSON)
+    val customData: String = "{}",   // 게임별 커스텀 데이터 (JSON)
+    val isUnlocked: Boolean = false, // 영구 해금 여부
+    val unlockedAt: Long = 0,        // 해금 시각 (타임스탐프)
+    val playedVersion: Int = 0       // 마지막 플레이한 게임 버전 (0 = 아직 미플레이)
 )

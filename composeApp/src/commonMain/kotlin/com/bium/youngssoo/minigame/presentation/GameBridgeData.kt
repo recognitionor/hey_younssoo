@@ -11,7 +11,8 @@ import kotlinx.serialization.json.Json
 data class GameInitData(
     val stage: Int = 1,
     val highScore: Int = 0,
-    val customData: String = "{}"
+    val customData: String = "{}",
+    val version: Int = 1
 ) {
     fun toJson(): String = Json.encodeToString(this)
 

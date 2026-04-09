@@ -23,5 +23,6 @@ data class MathResult(
     val problem: MathProblem,
     val isCorrect: Boolean,
     val timeTakenMillis: Long,
-    val rewardTier: RewardTier
+    val rewardTier: RewardTier,
+    val points: Int = 0
 )

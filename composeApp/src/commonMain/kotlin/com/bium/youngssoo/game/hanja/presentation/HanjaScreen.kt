@@ -5,6 +5,9 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +28,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import com.bium.youngssoo.core.presentation.components.ComboBadge
+import com.bium.youngssoo.core.presentation.components.PointsPopup
+import com.bium.youngssoo.core.presentation.components.SpeedGaugeBar
 import com.bium.youngssoo.core.presentation.theme.*
 
 @Composable
@@ -45,7 +53,18 @@ fun HanjaScreen(viewModel: HanjaGameViewModel, onNavigateBack: () -> Unit) {
     ) {
         when {
             state.isLoading -> {
-                CircularProgressIndicator(color = AuraPrimary)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    CircularProgressIndicator(color = AuraPrimary)
+                    if (state.loadingMessage != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = state.loadingMessage!!,
+                            color = AuraPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
             }
             !state.isPlaying && !state.isGameOver -> {
                 HanjaStartScreen(
@@ -164,6 +183,8 @@ fun HanjaStartScreen(
                     letterSpacing = 2.sp
                 )
 
+                Spacer(modifier = Modifier.height(16.dp))
+
                 if (hasGradeData) {
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -258,6 +279,25 @@ fun HanjaStartScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("점수 시스템", fontWeight = FontWeight.Bold, color = AuraPrimary, fontSize = 14.sp)
+                    HanjaScoreRuleRow("기본 점수", "+10", MaterialTheme.colorScheme.onSurface)
+                    HanjaScoreRuleRow("2초 이내 답변", "+10 스피드!", AuraTertiary)
+                    HanjaScoreRuleRow("4초 이내 답변", "+5 스피드", AuraTertiary)
+                    HanjaScoreRuleRow("2연속 정답", "+3 콤보", AuraSecondary)
+                    HanjaScoreRuleRow("3연속 정답", "+5 콤보", AuraSecondary)
+                    HanjaScoreRuleRow("5연속 이상", "+12 콤보🔥", AuraSecondary)
+                }
+
                 if (errorMessage != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -283,6 +323,17 @@ fun HanjaStartScreen(
                 Text("게임 시작", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = AuraOnPrimary)
             }
         }
+    }
+}
+
+@Composable
+private fun HanjaScoreRuleRow(label: String, value: String, valueColor: Color) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = valueColor)
     }
 }
 
@@ -385,6 +436,7 @@ fun HanjaPlayScreen(
                 color = AuraSecondary,
                 fontSize = 18.sp
             )
+            ComboBadge(comboCount = state.comboCount)
             Text(
                 text = "${state.sessionScore} pts",
                 fontWeight = FontWeight.Bold,
@@ -393,7 +445,14 @@ fun HanjaPlayScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        SpeedGaugeBar(
+            timeElapsedMillis = state.timeElapsedMillis,
+            isAnswered = state.selectedOption != null
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         val problem = state.currentProblem
         if (problem != null) {
@@ -420,20 +479,49 @@ fun HanjaPlayScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            PointsPopup(
+                breakdown = state.lastPointsBreakdown,
+                isIncorrect = state.selectedOption != null && state.isCorrectLastAnswer == false
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Shake animation for incorrect answer
+            val shakeOffset = remember { Animatable(0f) }
+            LaunchedEffect(state.selectedOption != null && state.isCorrectLastAnswer == false) {
+                if (state.selectedOption != null && state.isCorrectLastAnswer == false) {
+                    repeat(4) {
+                        shakeOffset.animateTo(8f, animationSpec = tween(50))
+                        shakeOffset.animateTo(-8f, animationSpec = tween(50))
+                    }
+                    shakeOffset.animateTo(0f)
+                }
+            }
 
             problem.options.forEach { option ->
                 val isSelected = state.selectedOption == option
                 val isAnswered = state.selectedOption != null
                 val isCorrectAnswer = option == problem.targetWord.meaning
 
-                val scale by animateFloatAsState(if (isSelected) 1.05f else 1.0f)
-                val alpha by animateFloatAsState(if (isAnswered && !isSelected) 0.3f else 1.0f)
+                val scale by animateFloatAsState(
+                    targetValue = when {
+                        isSelected && state.isCorrectLastAnswer == true -> 1.12f
+                        isSelected -> 1.05f
+                        else -> 1.0f
+                    },
+                    animationSpec = tween(300)
+                )
+                val alpha by animateFloatAsState(
+                    targetValue = if (isAnswered && !isSelected) 0.3f else 1.0f,
+                    animationSpec = tween(300)
+                )
 
                 val color = when {
-                    isSelected && state.isCorrectLastAnswer == true -> MaterialTheme.colorScheme.primary
-                    isSelected && state.isCorrectLastAnswer == false -> MaterialTheme.colorScheme.error
-                    isAnswered && isCorrectAnswer -> MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                    isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
+                    isSelected && state.isCorrectLastAnswer == false -> AuraError
+                    isAnswered && isCorrectAnswer -> AuraTertiary.copy(alpha = 0.5f)
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
 
@@ -444,7 +532,10 @@ fun HanjaPlayScreen(
                         .height(64.dp)
                         .padding(vertical = 6.dp)
                         .scale(scale)
-                        .alpha(alpha),
+                        .alpha(alpha)
+                        .graphicsLayer(
+                            translationX = if (isSelected) shakeOffset.value else 0f
+                        ),
                     colors = ButtonDefaults.buttonColors(containerColor = color),
                     shape = RoundedCornerShape(16.dp),
                     enabled = !isAnswered
@@ -452,8 +543,12 @@ fun HanjaPlayScreen(
                     Text(
                         text = option,
                         fontSize = 20.sp,
-                        color = if (isSelected) MaterialTheme.colorScheme.onPrimary
-                        else MaterialTheme.colorScheme.onSurface
+                        color = when {
+                            isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
+                            isSelected && state.isCorrectLastAnswer == false -> AuraError
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }

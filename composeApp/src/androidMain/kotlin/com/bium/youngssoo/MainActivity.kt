@@ -11,7 +11,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 
-class MainActivity : ComponentActivity() {
+import android.speech.tts.TextToSpeech
+import com.bium.youngssoo.core.data.androidTextToSpeech
+
+class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
 
     private val requestNotif = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -28,9 +31,26 @@ class MainActivity : ComponentActivity() {
                 requestNotif.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+        
+        androidTextToSpeech = TextToSpeech(this, this)
+        
         setContent {
             App()
         }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            androidTextToSpeech?.language = java.util.Locale.US
+            androidTextToSpeech?.speak("", TextToSpeech.QUEUE_FLUSH, null, "warmup")
+        }
+    }
+
+    override fun onDestroy() {
+        androidTextToSpeech?.stop()
+        androidTextToSpeech?.shutdown()
+        androidTextToSpeech = null
+        super.onDestroy()
     }
 }
 

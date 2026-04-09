@@ -26,7 +26,9 @@ data class MiniGameListState(
     val games: List<MiniGame> = emptyList(),
     val totalPoints: Int = 0,
     val errorMessage: String? = null,
-    val gameProgress: Map<String, Int> = emptyMap() // gameId -> currentStage
+    val gameProgress: Map<String, MiniGameProgressEntity> = emptyMap(),  // gameId -> MiniGameProgressEntity
+    val showUnlockDialog: Boolean = false,
+    val pendingUnlockGame: MiniGame? = null
 )
 
 class MiniGameViewModel(
@@ -58,7 +60,7 @@ class MiniGameViewModel(
     private fun observeProgress() {
         viewModelScope.launch {
             progressRepository.observeAllProgress().collect { progressList ->
-                val progressMap = progressList.associate { it.gameId to it.currentStage }
+                val progressMap = progressList.associateBy { it.gameId }
                 _state.value = _state.value.copy(gameProgress = progressMap)
             }
         }
@@ -100,7 +102,9 @@ class MiniGameViewModel(
                                 else -> CostType.TIME
                             },
                             costAmount = fields["costAmount"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 100,
-                            playValue = fields["playValue"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 180
+                            playValue = fields["playValue"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 180,
+                            unlockPrice = fields["unlockPrice"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 0,
+                            version = fields["version"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 1
                         )
                     } catch (e: Exception) {
                         null
@@ -117,6 +121,75 @@ class MiniGameViewModel(
         }
     }
 
+    /**
+     * 게임 카드 클릭 시 호출
+     * - 해금된 게임 → 바로 onPlayGame() 콜백
+     * - 미해금 게임 → 해금 다이얼로그 표시
+     */
+    fun onGameClicked(game: MiniGame, onPlayGame: (MiniGame) -> Unit) {
+        viewModelScope.launch {
+            val progress = _state.value.gameProgress[game.id]
+            val unlocked = progress?.isUnlocked ?: false
+
+            if (unlocked || game.unlockPrice == 0) {
+                // 해금 완료 또는 해금 불필요 → 버전 업데이트 후 플레이
+                progressRepository.updatePlayedVersion(game.id, game.version)
+                onPlayGame(game)
+            } else {
+                // 해금 필요 → 다이얼로그 표시
+                _state.value = _state.value.copy(
+                    showUnlockDialog = true,
+                    pendingUnlockGame = game
+                )
+            }
+        }
+    }
+
+    /**
+     * 해금 확인 버튼 클릭 처리
+     */
+    fun confirmUnlock(onSuccess: (MiniGame) -> Unit) {
+        val game = _state.value.pendingUnlockGame ?: return
+        viewModelScope.launch {
+            val success = rewardRepository.usePoints(game.unlockPrice)
+            if (success) {
+                progressRepository.unlockGame(game.id)
+                progressRepository.updatePlayedVersion(game.id, game.version)
+                _state.value = _state.value.copy(
+                    showUnlockDialog = false,
+                    pendingUnlockGame = null
+                )
+                onSuccess(game)
+            } else {
+                // 포인트 부족
+                _state.value = _state.value.copy(
+                    showUnlockDialog = false,
+                    pendingUnlockGame = null,
+                    errorMessage = "포인트가 부족합니다. (필요: ${game.unlockPrice} pts)"
+                )
+            }
+        }
+    }
+
+    /**
+     * 해금 다이얼로그 닫기
+     */
+    fun dismissUnlockDialog() {
+        _state.value = _state.value.copy(
+            showUnlockDialog = false,
+            pendingUnlockGame = null
+        )
+    }
+
+    /**
+     * 새 버전이 있는지 확인 (뱃지 표시용)
+     */
+    fun hasNewVersion(game: MiniGame): Boolean {
+        val progress = _state.value.gameProgress[game.id] ?: return false
+        return progress.isUnlocked && progress.playedVersion < game.version
+    }
+
+    @Deprecated("Use onGameClicked instead")
     fun purchaseGame(game: MiniGame) {
         viewModelScope.launch {
             if (_state.value.totalPoints >= game.costAmount) {

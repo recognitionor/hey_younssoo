@@ -6,6 +6,9 @@ import androidx.compose.foundation.background
 import kotlin.math.roundToInt
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.bium.youngssoo.core.presentation.theme.*
+import com.bium.youngssoo.game.math.domain.model.RewardTier
 import org.jetbrains.compose.resources.stringResource
 import youngsso.composeapp.generated.resources.*
 
@@ -284,13 +288,44 @@ fun GamePlayScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
         
-        // Answer Input Box
+        // Answer Input Box with Animation
+        val hasResult = state.lastResult != null
+        val isCorrect = state.lastResult?.isCorrect ?: false
+
+        val shakeOffset = remember { Animatable(0f) }
+        LaunchedEffect(hasResult && !isCorrect) {
+            if (hasResult && !isCorrect) {
+                repeat(4) {
+                    shakeOffset.animateTo(8f, animationSpec = tween(50))
+                    shakeOffset.animateTo(-8f, animationSpec = tween(50))
+                }
+                shakeOffset.animateTo(0f)
+            }
+        }
+
+        val scaleAnim = remember { Animatable(1f) }
+        LaunchedEffect(hasResult && isCorrect) {
+            if (hasResult && isCorrect) {
+                scaleAnim.animateTo(1.15f, animationSpec = tween(200))
+                scaleAnim.animateTo(1f, animationSpec = tween(200))
+            }
+        }
+
         Box(
             modifier = Modifier
                 .width(200.dp)
                 .height(72.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(
+                    if (isCorrect && hasResult) AuraTertiary.copy(alpha = 0.2f)
+                    else if (!isCorrect && hasResult) AuraError.copy(alpha = 0.2f)
+                    else MaterialTheme.colorScheme.surfaceVariant
+                )
+                .graphicsLayer(
+                    translationX = shakeOffset.value,
+                    scaleX = scaleAnim.value,
+                    scaleY = scaleAnim.value
+                ),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -301,26 +336,60 @@ fun GamePlayScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        // Feedback Popup
-        Box(modifier = Modifier.height(40.dp), contentAlignment = Alignment.Center) {
-            androidx.compose.animation.AnimatedVisibility(
-                visible = state.lastResult != null,
-                enter = scaleIn() + fadeIn(),
-                exit = fadeOut()
-            ) {
-                val result = state.lastResult
-                if (result != null) {
-                    val isCorrect = result.isCorrect
-                    val text = if (isCorrect) "⚡ CRITICAL HIT! (+${result.rewardTier.points})" else "❌ MISS!"
-                    val color = if (isCorrect) AuraTertiary else AuraError
+        // Expected Score or Result Display
+        Box(modifier = Modifier.height(80.dp), contentAlignment = Alignment.Center) {
+            if (state.lastResult != null) {
+                val result = state.lastResult!!
+                val isCorrect = result.isCorrect
+                val points = result.points
+
+                val text = if (isCorrect) "⚡ CRITICAL HIT!\n(+${points})" else "❌ MISS!"
+                val color = if (isCorrect) AuraTertiary else AuraError
+
+                // Pulse animation for correct answer
+                val pulseScale = remember { Animatable(1f) }
+                LaunchedEffect(Unit) {
+                    if (isCorrect) {
+                        repeat(2) {
+                            pulseScale.animateTo(1.15f, animationSpec = tween(300))
+                            pulseScale.animateTo(1f, animationSpec = tween(300))
+                        }
+                    }
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    visible = true,
+                    enter = scaleIn(initialScale = 0.5f) + fadeIn() + slideInVertically(initialOffsetY = { -it / 2 }),
+                    exit = scaleOut(targetScale = 0.5f) + fadeOut()
+                ) {
                     Text(
                         text = text,
-                        fontSize = 20.sp,
+                        fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = color,
-                        letterSpacing = 1.sp
+                        letterSpacing = 1.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.scale(if (isCorrect) pulseScale.value else 1f)
+                    )
+                }
+            } else if (state.isPlaying) {
+                // Show expected score during gameplay
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "예상 점수",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "+${state.expectedScore}",
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = AuraTertiary
                     )
                 }
             }
