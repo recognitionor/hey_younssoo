@@ -51,7 +51,7 @@ fun App() {
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
-            Box(modifier = Modifier.fillMaxSize().safeDrawingPadding()) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 var selectedTab by remember { mutableStateOf(MainTab.LEARN) }
                 var learnScreen by remember { mutableStateOf(LearnScreen.HOME) }
                 var playingGame by remember { mutableStateOf<MiniGame?>(null) }
@@ -84,6 +84,13 @@ fun App() {
                 } else {
                     // 일반 화면
                     Scaffold(
+                        contentWindowInsets = if (learnScreen == LearnScreen.HOME) {
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal + WindowInsetsSides.Top
+                            )
+                        } else {
+                            WindowInsets.safeDrawing
+                        },
                         bottomBar = {
                             // 학습 게임 화면에서는 탭바 숨김
                             if (learnScreen == LearnScreen.HOME) {

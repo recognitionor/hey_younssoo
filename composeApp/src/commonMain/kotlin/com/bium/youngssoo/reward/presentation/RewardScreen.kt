@@ -1,6 +1,8 @@
 package com.bium.youngssoo.reward.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -29,8 +31,12 @@ fun RewardScreen(viewModel: RewardViewModel) {
     val tertiaryColor = MaterialTheme.colorScheme.tertiary
 
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        val scrollState = rememberScrollState()
         Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(top = 24.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -127,6 +133,8 @@ fun RewardScreen(viewModel: RewardViewModel) {
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }

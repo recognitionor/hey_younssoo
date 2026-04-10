@@ -17,6 +17,29 @@ plugins {
 
 }
 
+val sharedMarketingVersion = rootProject.extra["appMarketingVersion"] as String
+val sharedBuildNumber = (rootProject.extra["appBuildNumber"] as String).toInt()
+val iosVersionConfigFile = rootProject.file("iosApp/Configuration/Version.xcconfig")
+
+val syncIosVersionConfig by tasks.registering {
+    outputs.file(iosVersionConfigFile)
+    doLast {
+        iosVersionConfigFile.writeText(
+            """
+            // Generated from /build.gradle.kts. Do not edit manually.
+            APP_MARKETING_VERSION = $sharedMarketingVersion
+            APP_BUILD_NUMBER = $sharedBuildNumber
+            """.trimIndent() + "\n"
+        )
+    }
+}
+
+tasks.matching {
+    it.name == "preBuild" || it.name == "embedAndSignAppleFrameworkForXcode"
+}.configureEach {
+    dependsOn(syncIosVersionConfig)
+}
+
 kotlin {
     androidTarget {
         @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -142,8 +165,8 @@ android {
         applicationId = "com.bium.youngssoo"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 103
-        versionName = "1.0.3"
+        versionCode = sharedBuildNumber
+        versionName = sharedMarketingVersion
     }
     packaging {
         resources {
@@ -169,4 +192,3 @@ android {
 dependencies {
     debugImplementation(compose.uiTooling)
 }
-

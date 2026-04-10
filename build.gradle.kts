@@ -7,3 +7,6 @@ plugins {
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.kotlinMultiplatform) apply false
 }
+
+extra["appMarketingVersion"] = "1.0.3"
+extra["appBuildNumber"] = "103"
