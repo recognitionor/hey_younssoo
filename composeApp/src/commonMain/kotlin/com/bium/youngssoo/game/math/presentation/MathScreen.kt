@@ -339,14 +339,19 @@ fun GamePlayScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Expected Score or Result Display
-        Box(modifier = Modifier.height(80.dp), contentAlignment = Alignment.Center) {
+        Box(modifier = Modifier.height(96.dp), contentAlignment = Alignment.Center) {
             if (state.lastResult != null) {
                 val result = state.lastResult!!
                 val isCorrect = result.isCorrect
                 val points = result.points
+                val correctAnswer = result.problem.correctAnswer
 
-                val text = if (isCorrect) "⚡ CRITICAL HIT!\n(+${points})" else "❌ MISS!"
-                val color = if (isCorrect) AuraTertiary else AuraError
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val text = if (isCorrect) "⚡ CRITICAL HIT!\n(+${points})" else "❌ MISS!"
+                    val color = if (isCorrect) AuraTertiary else AuraError
 
                 // Pulse animation for correct answer
                 val pulseScale = remember { Animatable(1f) }
@@ -374,6 +379,36 @@ fun GamePlayScreen(
                         modifier = Modifier.scale(if (isCorrect) pulseScale.value else 1f)
                     )
                 }
+
+                // Show correct answer if wrong
+                if (!isCorrect) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = "정답:",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(Color.White)
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = correctAnswer.toString(),
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AuraSuccessLight
+                            )
+                        }
+                    }
+                }
+                }  // Close Column
             } else if (state.isPlaying) {
                 // Show expected score during gameplay
                 Column(

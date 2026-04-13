@@ -401,22 +401,29 @@ fun VocabPlayScreen(state: VocabGameState, viewModel: VocabGameViewModel, onStop
 
             problem.options.forEach { option ->
                 val isSelected = state.selectedOption == option
+                val isCorrectAnswer = option == problem.targetWord.let {
+                    if (problem.targetType == QuestionType.ENG_TO_KOR) it.korean else it.english
+                }
 
                 val scale by animateFloatAsState(
                     targetValue = when {
                         isSelected && state.isCorrectLastAnswer == true -> 1.12f
                         isSelected -> 1.05f
+                        isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> 1.08f
                         else -> 1.0f
                     },
                     animationSpec = tween(300)
                 )
                 val alpha by animateFloatAsState(
-                    targetValue = if (isAnswered && !isSelected) 0.3f else 1.0f,
+                    targetValue = if (isAnswered && !isSelected && !isCorrectAnswer) 0.3f else 1.0f,
                     animationSpec = tween(300)
                 )
-                val bgColor = if (isSelected) {
-                    if (state.isCorrectLastAnswer == true) AuraTertiary else AuraError
-                } else MaterialTheme.colorScheme.surfaceVariant
+                val bgColor = when {
+                    isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
+                    isSelected && state.isCorrectLastAnswer == false -> AuraError
+                    isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> Color.White
+                    else -> MaterialTheme.colorScheme.surfaceVariant
+                }
 
                 Button(
                     onClick = { viewModel.submitAnswer(option) },
@@ -437,9 +444,10 @@ fun VocabPlayScreen(state: VocabGameState, viewModel: VocabGameViewModel, onStop
                         color = when {
                             isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
                             isSelected && state.isCorrectLastAnswer == false -> AuraError
+                            isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> AuraSuccessLight
                             else -> MaterialTheme.colorScheme.onSurface
                         },
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (isSelected || (isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false)) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }

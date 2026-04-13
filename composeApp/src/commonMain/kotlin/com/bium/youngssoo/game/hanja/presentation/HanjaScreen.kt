@@ -509,19 +509,20 @@ fun HanjaPlayScreen(
                     targetValue = when {
                         isSelected && state.isCorrectLastAnswer == true -> 1.12f
                         isSelected -> 1.05f
+                        isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> 1.08f
                         else -> 1.0f
                     },
                     animationSpec = tween(300)
                 )
                 val alpha by animateFloatAsState(
-                    targetValue = if (isAnswered && !isSelected) 0.3f else 1.0f,
+                    targetValue = if (isAnswered && !isSelected && !isCorrectAnswer) 0.3f else 1.0f,
                     animationSpec = tween(300)
                 )
 
                 val color = when {
                     isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
                     isSelected && state.isCorrectLastAnswer == false -> AuraError
-                    isAnswered && isCorrectAnswer -> AuraTertiary.copy(alpha = 0.5f)
+                    isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> Color.White
                     else -> MaterialTheme.colorScheme.surfaceVariant
                 }
 
@@ -546,9 +547,10 @@ fun HanjaPlayScreen(
                         color = when {
                             isSelected && state.isCorrectLastAnswer == true -> AuraTertiary
                             isSelected && state.isCorrectLastAnswer == false -> AuraError
+                            isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false -> AuraSuccessLight
                             else -> MaterialTheme.colorScheme.onSurface
                         },
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        fontWeight = if (isSelected || (isAnswered && isCorrectAnswer && state.isCorrectLastAnswer == false)) FontWeight.Bold else FontWeight.Normal
                     )
                 }
             }

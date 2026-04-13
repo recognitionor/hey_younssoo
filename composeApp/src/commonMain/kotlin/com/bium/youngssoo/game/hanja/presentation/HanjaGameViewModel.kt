@@ -45,7 +45,8 @@ data class HanjaGameState(
 class HanjaGameViewModel(
     private val rewardRepository: RewardRepository,
     private val soundPlayer: SoundPlayer,
-    private val questionRepository: QuestionRepository
+    private val questionRepository: QuestionRepository,
+    private val hanjaPreferencesRepository: com.bium.youngssoo.game.hanja.data.HanjaPreferencesRepository
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HanjaGameState())
@@ -98,7 +99,10 @@ class HanjaGameViewModel(
             // 로컬 DB에서 문제 가져오기 (초기 동기화 X)
             allQuestions = questionRepository.getQuestions(QuestionCategory.HANJA)
             questions = emptyList()
-            updateGradeState()
+
+            // 저장된 급수 선택 상태 로드
+            val savedGrades = hanjaPreferencesRepository.getSelectedGrades()
+            updateGradeState(savedGrades)
 
             _state.value = _state.value.copy(
                 isLoading = false,
@@ -114,7 +118,7 @@ class HanjaGameViewModel(
             questionRepository.syncQuestions(QuestionCategory.HANJA, forceRefresh = true)
             allQuestions = questionRepository.getQuestions(QuestionCategory.HANJA)
             questions = emptyList()
-            updateGradeState()
+            updateGradeState(_state.value.selectedGrades)
 
             _state.value = _state.value.copy(
                 isLoading = false,
@@ -344,6 +348,9 @@ class HanjaGameViewModel(
             },
             errorMessage = null
         )
+
+        // 선택 상태 저장
+        hanjaPreferencesRepository.saveSelectedGrades(updatedSelection)
     }
 
     fun selectAllGrades() {
@@ -354,6 +361,8 @@ class HanjaGameViewModel(
             filteredQuestionCount = if (allGrades.isEmpty()) allQuestions.size else questions.size,
             errorMessage = null
         )
+        // 선택 상태 저장
+        hanjaPreferencesRepository.saveSelectedGrades(allGrades)
     }
 
     fun clearGradeSelection() {
@@ -363,15 +372,23 @@ class HanjaGameViewModel(
             filteredQuestionCount = 0,
             errorMessage = null
         )
+        // 선택 상태 저장
+        hanjaPreferencesRepository.saveSelectedGrades(emptySet())
     }
 
-    private fun updateGradeState() {
+    private fun updateGradeState(savedGrades: Set<String> = emptySet()) {
         val availableGrades = gradeOrder // 항상 고정된 급수 목록 표시
 
-        val currentSelection = _state.value.selectedGrades
-        val selectedGrades = if (currentSelection.isEmpty()) availableGrades.toSet() else currentSelection
+        // 저장된 선택이 있으면 사용, 없으면 모든 급수 선택
+        val selectedGrades = if (savedGrades.isNotEmpty()) {
+            // 저장된 선택이 있지만, 유효하지 않은 항목은 제거 (예: 급수 목록이 변경된 경우)
+            savedGrades.filter { it in availableGrades }.toSet()
+        } else {
+            // 초기 로드: 모든 급수 선택
+            availableGrades.toSet()
+        }
 
-        questions = filterQuestionsByGrades(selectedGrades)
+        questions = if (selectedGrades.isEmpty()) emptyList() else filterQuestionsByGrades(selectedGrades)
 
         val filterableQuestionCount = allQuestions.count { it.grade.isNotBlank() }
 

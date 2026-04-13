@@ -29,6 +29,8 @@ val AuraSurfaceVariant = Color(0xFF252530)
 val AuraOnSurfaceVariant = Color(0xFFACAAB5)
 val AuraOutline = Color(0xFF76747F)
 val AuraOutlineVariant = Color(0xFF484750)
+val AuraSuccess = Color(0xFF66BB6A)  // 정답 배경용
+val AuraSuccessLight = Color(0xFF4CAF50)  // 밝은 초록색 - 정답 텍스트용
 
 val AuraNocturnaColorScheme = darkColorScheme(
     primary = AuraPrimary,

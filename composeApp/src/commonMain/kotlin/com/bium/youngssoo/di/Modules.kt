@@ -6,6 +6,7 @@ import com.bium.youngssoo.core.media.SoundPlayer
 import com.bium.youngssoo.game.math.presentation.MathGameViewModel
 import com.bium.youngssoo.game.vocab.presentation.VocabGameViewModel
 import com.bium.youngssoo.game.hanja.presentation.HanjaGameViewModel
+import com.bium.youngssoo.game.hanja.data.HanjaPreferencesRepository
 import com.bium.youngssoo.minigame.data.repository.MiniGameProgressRepository
 import com.bium.youngssoo.minigame.presentation.MiniGameViewModel
 import com.bium.youngssoo.reward.domain.RewardRepository
@@ -51,6 +52,9 @@ val sharedModules = module {
     // QuestionRepository에 HttpClient 연결
     single<Settings> { Settings() }
     single { QuestionRepository(get(), get(), get()) }
+
+    // Hanja 게임 설정 저장소
+    single { HanjaPreferencesRepository(get()) }
 
     viewModelOf(::MathGameViewModel)
     viewModelOf(::VocabGameViewModel)
