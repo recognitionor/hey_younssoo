@@ -16,12 +16,36 @@ data class MiniGame(
     val costAmount: Int,           // 비용 (포인트)
     val playValue: Int,            // 플레이 가능 시간(초) 또는 판수
     val unlockPrice: Int = 0,      // 영구 해금 가격 (0이면 해금 불필요)
-    val version: Int = 1           // 게임 HTML 버전
+    val version: Int = 1,          // 게임 HTML 버전
+    val screenOrientation: GameScreenOrientation = GameScreenOrientation.PORTRAIT
 )
 
 enum class CostType {
     TIME,   // 시간 기반 (초 단위)
     PLAYS   // 판수 기반
+}
+
+@Serializable
+enum class GameScreenOrientation {
+    PORTRAIT,
+    LANDSCAPE;
+
+    companion object {
+        fun fromRaw(value: String?): GameScreenOrientation {
+            val normalized = value
+                ?.trim()
+                ?.replace("-", "_")
+                ?.uppercase()
+                ?: return PORTRAIT
+
+            return when {
+                normalized == "가로" -> LANDSCAPE
+                normalized.contains("LANDSCAPE") -> LANDSCAPE
+                normalized == "HORIZONTAL" -> LANDSCAPE
+                else -> PORTRAIT
+            }
+        }
+    }
 }
 
 /**

@@ -190,9 +190,13 @@
   "gameUrl": "https://your-hosting.com/games/puzzle/index.html",
   "costType": "TIME",
   "costAmount": 100,
-  "playValue": 180
+  "playValue": 180,
+  "screenOrientation": "PORTRAIT"
 }
 ```
+
+`screenOrientation` 값은 `PORTRAIT` 또는 `LANDSCAPE`를 사용합니다.
+
 
 ---
 

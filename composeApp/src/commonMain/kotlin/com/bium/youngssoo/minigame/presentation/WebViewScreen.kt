@@ -1,19 +1,25 @@
 package com.bium.youngssoo.minigame.presentation
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.bium.youngssoo.PlatformOrientationEffect
 import com.bium.youngssoo.core.presentation.theme.AuraPrimary
 import com.bium.youngssoo.minigame.data.model.GameResult
+import com.bium.youngssoo.minigame.data.model.GameScreenOrientation
 import com.bium.youngssoo.minigame.data.model.MiniGame
 
 /**
@@ -43,6 +49,13 @@ fun WebViewGameScreen(
     var showResult by remember { mutableStateOf(false) }
     var resultData by remember { mutableStateOf<GameResultData?>(null) }
     var currentStage by remember { mutableStateOf(gameInitData?.stage ?: 1) }
+    val screenOrientation = if (!showResult && game.screenOrientation == GameScreenOrientation.LANDSCAPE) {
+        GameScreenOrientation.LANDSCAPE
+    } else {
+        GameScreenOrientation.PORTRAIT
+    }
+
+    PlatformOrientationEffect(orientation = screenOrientation)
 
     // 결과 화면 표시
     if (showResult && resultData != null) {
@@ -73,98 +86,111 @@ fun WebViewGameScreen(
     // 타이머 (시간 기반 게임인 경우) - 퍼즐버블은 자체 게임 완료 처리하므로 타이머 제거
     // LaunchedEffect는 필요시 활성화
 
-    Column(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0D0D15))
     ) {
-        // 상단 바
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        val isLandscapeLayout = maxWidth > maxHeight
+        val horizontalPadding = if (isLandscapeLayout) 12.dp else 16.dp
+        val verticalPadding = if (isLandscapeLayout) 8.dp else 14.dp
+        val titleFontSize = if (isLandscapeLayout) 14.sp else 16.sp
+        val metaFontSize = if (isLandscapeLayout) 12.sp else 14.sp
+        val closeButtonSize = if (isLandscapeLayout) 32.dp else 40.dp
+        val closeIconSize = if (isLandscapeLayout) 18.dp else 22.dp
+
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = game.name,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = AuraPrimary
-            )
-
-            // 스테이지 표시
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Stage $currentStage",
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // 점수 표시
-            Text(
-                text = "$gameScore",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF00D4FF)
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            IconButton(onClick = {
-                onGameEnd(
-                    GameResult(
-                        gameId = game.id,
-                        score = gameScore,
-                        playTime = (playTime - remainingTime) * 1000L,
-                        isCompleted = false
-                    )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${game.name} · Stage $currentStage",
+                    modifier = Modifier.weight(1f),
+                    fontSize = titleFontSize,
+                    fontWeight = FontWeight.Bold,
+                    color = AuraPrimary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
-                onClose()
-            }) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = "Close",
-                    tint = Color.White
+
+                Spacer(modifier = Modifier.width(if (isLandscapeLayout) 8.dp else 12.dp))
+
+                Text(
+                    text = "$gameScore",
+                    fontSize = metaFontSize,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF00D4FF)
+                )
+
+                Spacer(modifier = Modifier.width(if (isLandscapeLayout) 8.dp else 12.dp))
+
+                Box(
+                    modifier = Modifier
+                        .size(closeButtonSize)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.08f))
+                        .clickable {
+                            onGameEnd(
+                                GameResult(
+                                    gameId = game.id,
+                                    score = gameScore,
+                                    playTime = (playTime - remainingTime) * 1000L,
+                                    isCompleted = false
+                                )
+                            )
+                            onClose()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = Color.White,
+                        modifier = Modifier.size(closeIconSize)
+                    )
+                }
+            }
+
+            // WebView 영역 (플랫폼별 구현)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White)
+            ) {
+                PlatformWebView(
+                    url = game.gameUrl,
+                    gameData = GameInitData(
+                        stage = currentStage,
+                        highScore = gameInitData?.highScore ?: 0,
+                        customData = gameInitData?.customData ?: "{}",
+                        version = game.version
+                    ),
+                    onScoreUpdate = { score -> gameScore = score },
+                    onGameComplete = { completeData ->
+                        gameScore = completeData.score
+
+                        // 목표 점수 계산 (스테이지 기반)
+                        val targetScore = 100 * currentStage + 50 * (currentStage - 1)
+
+                        resultData = GameResultData(
+                            score = completeData.score,
+                            targetScore = targetScore,
+                            isCleared = completeData.cleared
+                        )
+                        showResult = true
+
+                        completeData.customData?.let { onSaveCustomData(it) }
+                    },
+                    onSaveData = { data ->
+                        onSaveCustomData(data)
+                    }
                 )
             }
-        }
-
-        // WebView 영역 (플랫폼별 구현)
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-        ) {
-            PlatformWebView(
-                url = game.gameUrl,
-                gameData = GameInitData(
-                    stage = currentStage,
-                    highScore = gameInitData?.highScore ?: 0,
-                    customData = gameInitData?.customData ?: "{}",
-                    version = game.version
-                ),
-                onScoreUpdate = { score -> gameScore = score },
-                onGameComplete = { completeData ->
-                    gameScore = completeData.score
-
-                    // 목표 점수 계산 (스테이지 기반)
-                    val targetScore = 100 * currentStage + 50 * (currentStage - 1)
-
-                    resultData = GameResultData(
-                        score = completeData.score,
-                        targetScore = targetScore,
-                        isCleared = completeData.cleared
-                    )
-                    showResult = true
-
-                    completeData.customData?.let { onSaveCustomData(it) }
-                },
-                onSaveData = { data ->
-                    onSaveCustomData(data)
-                }
-            )
         }
     }
 }

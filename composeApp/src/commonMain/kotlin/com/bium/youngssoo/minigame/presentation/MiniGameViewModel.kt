@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.bium.youngssoo.minigame.data.local.MiniGameProgressEntity
 import com.bium.youngssoo.minigame.data.model.CostType
 import com.bium.youngssoo.minigame.data.model.GameResult
+import com.bium.youngssoo.minigame.data.model.GameScreenOrientation
 import com.bium.youngssoo.minigame.data.model.MiniGame
 import com.bium.youngssoo.minigame.data.repository.MiniGameProgressRepository
 import com.bium.youngssoo.reward.domain.RewardRepository
@@ -104,7 +105,11 @@ class MiniGameViewModel(
                             costAmount = fields["costAmount"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 100,
                             playValue = fields["playValue"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 180,
                             unlockPrice = fields["unlockPrice"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 0,
-                            version = fields["version"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 1
+                            version = fields["version"]?.jsonObject?.get("integerValue")?.jsonPrimitive?.intOrNull ?: 1,
+                            screenOrientation = GameScreenOrientation.fromRaw(
+                                fields["screenOrientation"]?.jsonObject?.get("stringValue")?.jsonPrimitive?.content
+                                    ?: fields["orientation"]?.jsonObject?.get("stringValue")?.jsonPrimitive?.content
+                            )
                         )
                     } catch (e: Exception) {
                         null

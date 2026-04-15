@@ -17,6 +17,7 @@ import com.bium.youngssoo.game.vocab.presentation.VocabGameViewModel
 import com.bium.youngssoo.game.hanja.presentation.HanjaScreen
 import com.bium.youngssoo.game.hanja.presentation.HanjaGameViewModel
 import androidx.compose.runtime.rememberCoroutineScope
+import com.bium.youngssoo.minigame.data.model.GameScreenOrientation
 import com.bium.youngssoo.minigame.data.model.MiniGame
 import com.bium.youngssoo.minigame.presentation.GameInitData
 import com.bium.youngssoo.minigame.presentation.MiniGameListScreen
@@ -59,6 +60,7 @@ fun App() {
                 var showTestWebView by remember { mutableStateOf(false) }
                 val coroutineScope = rememberCoroutineScope()
 
+                PlatformOrientationEffect(orientation = GameScreenOrientation.PORTRAIT)
 
                 // 미니게임 플레이 중일 때
                 if (playingGame != null) {

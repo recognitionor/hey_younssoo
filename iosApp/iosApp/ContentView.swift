@@ -2,34 +2,66 @@ import UIKit
 import SwiftUI
 import ComposeApp
 
-import UIKit
-import SwiftUI
+final class AppOrientationContainerViewController: UIViewController {
+    private let composeVC = MainViewControllerKt.MainViewController()
 
+    override func viewDidLoad() {
+        super.viewDidLoad()
 
-struct ContentView: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> UIViewController {
-        let composeVC = MainViewControllerKt.MainViewController()
-
-        let rootVC = UIViewController()
-        rootVC.view.backgroundColor = .clear // 투명하게 설정 (Compose 배경 활용)
-
-        // ComposeView가 SafeArea 침범할 수 있도록 설정
+        view.backgroundColor = .clear
         composeVC.view.translatesAutoresizingMaskIntoConstraints = false
         composeVC.view.backgroundColor = .clear
 
-        rootVC.addChild(composeVC)
-        rootVC.view.addSubview(composeVC.view)
+        addChild(composeVC)
+        view.addSubview(composeVC.view)
 
         NSLayoutConstraint.activate([
-            composeVC.view.topAnchor.constraint(equalTo: rootVC.view.topAnchor),
-            composeVC.view.bottomAnchor.constraint(equalTo: rootVC.view.bottomAnchor),
-            composeVC.view.leadingAnchor.constraint(equalTo: rootVC.view.leadingAnchor),
-            composeVC.view.trailingAnchor.constraint(equalTo: rootVC.view.trailingAnchor)
+            composeVC.view.topAnchor.constraint(equalTo: view.topAnchor),
+            composeVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            composeVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            composeVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        composeVC.didMove(toParent: rootVC)
+        composeVC.didMove(toParent: self)
 
-        return rootVC
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleOrientationNotification(_:)),
+            name: OrientationLock.notificationName,
+            object: nil
+        )
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        OrientationLock.register(controller: self)
+        OrientationLock.refresh()
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        OrientationLock.currentMask
+    }
+
+    override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
+        OrientationLock.preferredOrientation
+    }
+
+    override var shouldAutorotate: Bool {
+        true
+    }
+
+    @objc private func handleOrientationNotification(_ notification: Notification) {
+        OrientationLock.handle(notification: notification)
+    }
+}
+
+struct ContentView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        AppOrientationContainerViewController()
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
