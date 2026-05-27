@@ -15,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
@@ -30,7 +31,8 @@ data class MathGameState(
     val correctAnswers: Int = 0,
     val expectedScore: Int = 0,
     val comboCount: Int = 0,
-    val lastPointsBreakdown: PointsBreakdown? = null
+    val lastPointsBreakdown: PointsBreakdown? = null,
+    val currentPoints: Int = 0
 )
 
 class MathGameViewModel(
@@ -42,6 +44,14 @@ class MathGameViewModel(
 
     private var timerJob: Job? = null
     private var problemStartTime: Long = 0L
+
+    init {
+        viewModelScope.launch {
+            rewardRepository.totalPoints.collect { points ->
+                _state.update { it.copy(currentPoints = points) }
+            }
+        }
+    }
 
     private fun getTimeLimit(round: Int): Long {
         return when (round) {
@@ -243,5 +253,18 @@ class MathGameViewModel(
     fun stopGame() {
         timerJob?.cancel()
         _state.value = _state.value.copy(isPlaying = false, currentProblem = null)
+    }
+
+    fun tryPlayAgain(): Boolean {
+        return if (rewardRepository.usePoints(REPLAY_COST)) {
+            startGame()
+            true
+        } else {
+            false
+        }
+    }
+
+    companion object {
+        const val REPLAY_COST = 50
     }
 }

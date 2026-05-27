@@ -39,7 +39,8 @@ data class HanjaGameState(
     val selectedGrades: Set<String> = emptySet(),
     val availableQuestionCount: Int = 0,
     val filteredQuestionCount: Int = 0,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val currentPoints: Int = 0
 )
 
 class HanjaGameViewModel(
@@ -90,6 +91,11 @@ class HanjaGameViewModel(
 
     init {
         loadQuestions()
+        viewModelScope.launch {
+            rewardRepository.totalPoints.collect { points ->
+                _state.value = _state.value.copy(currentPoints = points)
+            }
+        }
     }
 
     private fun loadQuestions() {
@@ -323,6 +329,19 @@ class HanjaGameViewModel(
     fun stopGame() {
         timerJob?.cancel()
         _state.value = _state.value.copy(isPlaying = false, isGameOver = false, currentProblem = null)
+    }
+
+    fun tryPlayAgain(): Boolean {
+        return if (rewardRepository.usePoints(REPLAY_COST)) {
+            startGame()
+            true
+        } else {
+            false
+        }
+    }
+
+    companion object {
+        const val REPLAY_COST = 50
     }
 
     fun toggleGradeSelection(grade: String, selected: Boolean) {

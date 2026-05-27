@@ -29,6 +29,9 @@ fun GameResultScreen(
     targetScore: Int,
     isCleared: Boolean,
     reason: String? = null,
+    currentPoints: Int = 0,
+    replayCost: Int = 0,
+    onPlayAgain: (() -> Unit)? = null,
     onExit: () -> Unit
 ) {
     // 애니메이션
@@ -60,7 +63,8 @@ fun GameResultScreen(
                         Color(0xFF1A1A2E)
                     )
                 )
-            ),
+            )
+            .windowInsetsPadding(WindowInsets.safeDrawing),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -214,6 +218,36 @@ fun GameResultScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            if (onPlayAgain != null) {
+                val hasEnoughPoints = currentPoints >= replayCost
+                Button(
+                    onClick = onPlayAgain,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (hasEnoughPoints) Color(0xFF7C3AED) else Color(0xFF3A3A4E)
+                    )
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "한번더 하기",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = if (hasEnoughPoints) "-${replayCost}G  (보유: ${currentPoints}G)"
+                                   else "G 부족  (보유: ${currentPoints}G / 필요: ${replayCost}G)",
+                            fontSize = 11.sp,
+                            color = if (hasEnoughPoints) Color.White.copy(alpha = 0.75f) else Color(0xFFFF6B6B)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
 
             Button(
                 onClick = onExit,

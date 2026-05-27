@@ -8,5 +8,5 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform) apply false
 }
 
-extra["appMarketingVersion"] = "1.0.3"
-extra["appBuildNumber"] = "103"
+extra["appMarketingVersion"] = "1.0.4"
+extra["appBuildNumber"] = "104"

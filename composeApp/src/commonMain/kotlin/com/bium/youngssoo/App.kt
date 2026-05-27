@@ -65,10 +65,12 @@ fun App() {
                 // 미니게임 플레이 중일 때
                 if (playingGame != null) {
                     val miniGameViewModel = koinViewModel<MiniGameViewModel>()
+                    val miniGameState by miniGameViewModel.state.collectAsState()
                     WebViewGameScreen(
                         game = playingGame!!,
                         gameInitData = gameInitData,
                         playTime = playingGame!!.playValue,
+                        totalPoints = miniGameState.totalPoints,
                         onGameEnd = { result ->
                             miniGameViewModel.onGameResult(result)
                         },
@@ -77,6 +79,9 @@ fun App() {
                         },
                         onSaveCustomData = { data ->
                             miniGameViewModel.saveCustomData(playingGame!!.id, data)
+                        },
+                        onPlayAgain = {
+                            miniGameViewModel.tryPlayAgain(playingGame!!.costAmount)
                         },
                         onClose = {
                             playingGame = null

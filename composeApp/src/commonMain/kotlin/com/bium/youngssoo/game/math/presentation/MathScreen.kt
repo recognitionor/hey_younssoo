@@ -55,7 +55,11 @@ fun MathScreen(viewModel: MathGameViewModel, onNavigateBack: () -> Unit) {
         } else if (state.isGameOver) {
             GameOverScreen(
                 score = state.sessionScore,
-                onRestart = { viewModel.startGame() },
+                currentPoints = state.currentPoints,
+                replayCost = MathGameViewModel.REPLAY_COST,
+                onPlayAgain = {
+                    if (!viewModel.tryPlayAgain()) onNavigateBack()
+                },
                 onNavigateBack = onNavigateBack
             )
         } else {
@@ -141,7 +145,14 @@ fun StartScreen(score: Int, onStart: () -> Unit, onBack: () -> Unit) {
 }
 
 @Composable
-fun GameOverScreen(score: Int, onRestart: () -> Unit, onNavigateBack: () -> Unit) {
+fun GameOverScreen(
+    score: Int,
+    currentPoints: Int,
+    replayCost: Int,
+    onPlayAgain: () -> Unit,
+    onNavigateBack: () -> Unit
+) {
+    val hasEnoughPoints = currentPoints >= replayCost
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = stringResource(Res.string.math_cleared),
@@ -156,16 +167,36 @@ fun GameOverScreen(score: Int, onRestart: () -> Unit, onNavigateBack: () -> Unit
             fontSize = 24.sp,
             color = MaterialTheme.colorScheme.onSurface
         )
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = "보유: ${currentPoints}G",
+            fontSize = 16.sp,
+            color = if (hasEnoughPoints) AuraTertiary else AuraError
+        )
+        Spacer(modifier = Modifier.height(40.dp))
         Button(
-            onClick = onRestart,
-            colors = ButtonDefaults.buttonColors(containerColor = AuraSecondary),
+            onClick = onPlayAgain,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (hasEnoughPoints) AuraSecondary else MaterialTheme.colorScheme.surfaceVariant
+            ),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth(0.8f)
                 .height(60.dp)
         ) {
-            Text(stringResource(Res.string.math_btn_again), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = AuraOnSecondary)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    stringResource(Res.string.math_btn_again),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (hasEnoughPoints) AuraOnSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = if (hasEnoughPoints) "-${replayCost}G" else "G가 부족합니다",
+                    fontSize = 12.sp,
+                    color = if (hasEnoughPoints) AuraOnSecondary.copy(alpha = 0.8f) else AuraError
+                )
+            }
         }
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedButton(

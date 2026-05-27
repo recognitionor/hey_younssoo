@@ -38,7 +38,8 @@ data class VocabGameState(
     // 타이머 및 보너스
     val timeElapsedMillis: Long = 0L,
     val comboCount: Int = 0,
-    val lastPointsBreakdown: PointsBreakdown? = null
+    val lastPointsBreakdown: PointsBreakdown? = null,
+    val currentPoints: Int = 0
 )
 
 class VocabGameViewModel(
@@ -69,6 +70,11 @@ class VocabGameViewModel(
 
     init {
         loadQuestions()
+        viewModelScope.launch {
+            rewardRepository.totalPoints.collect { points ->
+                _state.value = _state.value.copy(currentPoints = points)
+            }
+        }
     }
 
     private fun loadQuestions() {
@@ -260,5 +266,18 @@ class VocabGameViewModel(
         stopTextToSpeech()
         timerJob?.cancel()
         _state.value = _state.value.copy(isPlaying = false, isGameOver = false, currentProblem = null)
+    }
+
+    fun tryPlayAgain(): Boolean {
+        return if (rewardRepository.usePoints(REPLAY_COST)) {
+            startGame()
+            true
+        } else {
+            false
+        }
+    }
+
+    companion object {
+        const val REPLAY_COST = 50
     }
 }

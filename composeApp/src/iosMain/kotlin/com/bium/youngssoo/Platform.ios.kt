@@ -26,7 +26,13 @@ actual fun PlatformOrientationEffect(orientation: GameScreenOrientation) {
             orientation.name,
             null
         )
-        onDispose { }
+        onDispose {
+            NSNotificationCenter.defaultCenter.postNotificationName(
+                ORIENTATION_CHANGE_NOTIFICATION,
+                GameScreenOrientation.PORTRAIT.name,
+                null
+            )
+        }
     }
 }
 

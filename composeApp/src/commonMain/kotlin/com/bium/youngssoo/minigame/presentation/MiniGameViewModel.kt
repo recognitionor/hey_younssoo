@@ -242,6 +242,10 @@ class MiniGameViewModel(
         }
     }
 
+    fun tryPlayAgain(costAmount: Int): Boolean {
+        return rewardRepository.usePoints(costAmount)
+    }
+
     fun refreshGames() {
         loadGames()
     }

@@ -39,9 +39,11 @@ fun WebViewGameScreen(
     game: MiniGame,
     gameInitData: GameInitData? = null,
     playTime: Int,  // 플레이 가능 시간 (초) 또는 판수
+    totalPoints: Int = 0,
     onGameEnd: (GameResult) -> Unit,
     onStageCleared: () -> Unit = {},
     onSaveCustomData: (String) -> Unit = {},
+    onPlayAgain: (() -> Boolean)? = null,
     onClose: () -> Unit
 ) {
     var remainingTime by remember { mutableStateOf(playTime) }
@@ -49,6 +51,7 @@ fun WebViewGameScreen(
     var showResult by remember { mutableStateOf(false) }
     var resultData by remember { mutableStateOf<GameResultData?>(null) }
     var currentStage by remember { mutableStateOf(gameInitData?.stage ?: 1) }
+    var webViewKey by remember { mutableStateOf(0) }
     val screenOrientation = if (!showResult && game.screenOrientation == GameScreenOrientation.LANDSCAPE) {
         GameScreenOrientation.LANDSCAPE
     } else {
@@ -59,22 +62,37 @@ fun WebViewGameScreen(
 
     // 결과 화면 표시
     if (showResult && resultData != null) {
+        val captured = resultData!!
         GameResultScreen(
             gameName = game.name,
             stage = currentStage,
-            score = resultData!!.score,
-            targetScore = resultData!!.targetScore,
-            isCleared = resultData!!.isCleared,
+            score = captured.score,
+            targetScore = captured.targetScore,
+            isCleared = captured.isCleared,
+            currentPoints = totalPoints,
+            replayCost = game.costAmount,
+            onPlayAgain = if (onPlayAgain != null) ({
+                if (onPlayAgain()) {
+                    showResult = false
+                    resultData = null
+                    gameScore = 0
+                    remainingTime = playTime
+                    webViewKey++
+                } else {
+                    onGameEnd(GameResult(game.id, captured.score, 0L, captured.isCleared))
+                    onClose()
+                }
+            }) else null,
             onExit = {
-                if (resultData!!.isCleared) {
+                if (captured.isCleared) {
                     onStageCleared()
                 }
                 onGameEnd(
                     GameResult(
                         gameId = game.id,
-                        score = resultData!!.score,
+                        score = captured.score,
                         playTime = (playTime - remainingTime) * 1000L,
-                        isCompleted = resultData!!.isCleared
+                        isCompleted = captured.isCleared
                     )
                 )
                 onClose()
@@ -90,6 +108,7 @@ fun WebViewGameScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFF0D0D15))
+            .windowInsetsPadding(WindowInsets.safeDrawing)
     ) {
         val isLandscapeLayout = maxWidth > maxHeight
         val horizontalPadding = if (isLandscapeLayout) 12.dp else 16.dp
@@ -162,34 +181,36 @@ fun WebViewGameScreen(
                     .fillMaxSize()
                     .background(Color.White)
             ) {
-                PlatformWebView(
-                    url = game.gameUrl,
-                    gameData = GameInitData(
-                        stage = currentStage,
-                        highScore = gameInitData?.highScore ?: 0,
-                        customData = gameInitData?.customData ?: "{}",
-                        version = game.version
-                    ),
-                    onScoreUpdate = { score -> gameScore = score },
-                    onGameComplete = { completeData ->
-                        gameScore = completeData.score
+                key(webViewKey) {
+                    PlatformWebView(
+                        url = game.gameUrl,
+                        gameData = GameInitData(
+                            stage = currentStage,
+                            highScore = gameInitData?.highScore ?: 0,
+                            customData = gameInitData?.customData ?: "{}",
+                            version = game.version
+                        ),
+                        onScoreUpdate = { score -> gameScore = score },
+                        onGameComplete = { completeData ->
+                            gameScore = completeData.score
 
-                        // 목표 점수 계산 (스테이지 기반)
-                        val targetScore = 100 * currentStage + 50 * (currentStage - 1)
+                            // 목표 점수 계산 (스테이지 기반)
+                            val targetScore = 100 * currentStage + 50 * (currentStage - 1)
 
-                        resultData = GameResultData(
-                            score = completeData.score,
-                            targetScore = targetScore,
-                            isCleared = completeData.cleared
-                        )
-                        showResult = true
+                            resultData = GameResultData(
+                                score = completeData.score,
+                                targetScore = targetScore,
+                                isCleared = completeData.cleared
+                            )
+                            showResult = true
 
-                        completeData.customData?.let { onSaveCustomData(it) }
-                    },
-                    onSaveData = { data ->
-                        onSaveCustomData(data)
-                    }
-                )
+                            completeData.customData?.let { onSaveCustomData(it) }
+                        },
+                        onSaveData = { data ->
+                            onSaveCustomData(data)
+                        }
+                    )
+                }
             }
         }
     }
