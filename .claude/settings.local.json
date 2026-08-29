@@ -36,7 +36,11 @@
       "Read(//tmp/**)",
       "Bash(python3 -c \"import urllib.request; urllib.request.urlretrieve\\('https://heyyoungssoo.web.app/number-ball/index.html', '/tmp/deployed_number_ball.html'\\)\")",
       "Bash(grep:*)",
-      "Bash(git diff:*)"
+      "Bash(git diff:*)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('project_id:', d['project_info']['project_id']\\); print\\('project_number:', d['project_info']['project_number']\\)\")",
+      "Bash(firebase hosting:sites:list --project heyyoungssoo)",
+      "Bash(firebase hosting:sites:create youngssoo-webgl-test --project heyyoungssoo)",
+      "Bash(curl -sI https://youngssoo-webgl-test.web.app)"
     ]
   }
 }
